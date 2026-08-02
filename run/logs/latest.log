@@ -1,0 +1,9 @@
+[01:30:34] [ServerMain/INFO]: [bootstrap] Running Java 21 (OpenJDK 64-Bit Server VM 21.0.11+10-LTS; Eclipse Adoptium Temurin-21.0.11+10) on Windows 11 10.0 (amd64)
+[01:30:34] [ServerMain/INFO]: [bootstrap] Loading Paper 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) for Minecraft 1.21.11
+[01:30:35] [ServerMain/INFO]: [PluginInitializerManager] Initializing plugins...
+[01:30:36] [Paper Plugin Remapper Thread - 2/INFO]: [PluginRemapper] Remapping plugin 'C:\Users\thegenathor17\IdeaProjects\nahum-Inventory-Stuff\build\libs\nahum-Inventory-Stuff-1.0-SNAPSHOT.jar'...
+[01:30:36] [Paper Plugin Remapper Thread - 2/INFO]: [PluginRemapper] Done remapping plugin 'C:\Users\thegenathor17\IdeaProjects\nahum-Inventory-Stuff\build\libs\nahum-Inventory-Stuff-1.0-SNAPSHOT.jar' in 383ms.
+[01:30:36] [ServerMain/INFO]: [PluginInitializerManager] Initialized 1 plugin
+[01:30:36] [ServerMain/INFO]: [PluginInitializerManager] Bukkit plugins (1):
+ - nahum-Inventory-Stuff (1.0-SNAPSHOT)
+[01:30:41] [ServerMain/INFO]: You need to agree to the EULA in order to run the server. Go to eula.txt for more info.

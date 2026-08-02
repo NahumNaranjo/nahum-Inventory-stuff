@@ -1,0 +1,25 @@
+name: nahum-Inventory-Stuff
+version: '${version}'
+
+main: dev.nahum.nahumInventoryStuff.NahumInventoryStuff
+api-version: '1.21.11'
+load: POSTWORLD
+
+commands:
+  echesttools:
+    description: Some echest tweaks and tools
+    permission: nahumImventoryStuff.echesttools
+    permission-message: You do not have permission to use this command!
+    usage: /<command> <username> (optional)<username>
+
+  inventorytools:
+    description: Some inventory tweaks and tools
+    permission: nahumImventoryStuff.inventorytools
+    permission-message: You do not have permission to use this command!
+    usage: /<command> <option> <username> (optional)<username>
+
+  inventoryclear:
+    description: Clears the items in the user's inventory or enderchest
+    permission: nahumImventoryStuff.inventoryclean
+    permission-message: You do not have permission to use this command!
+    usage: /<command> <option> <username>
