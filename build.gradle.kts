@@ -1,15 +1,17 @@
 plugins {
     id("java-library")
     id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.21"
 }
 
 repositories {
     mavenCentral()
+    maven("https://papermc.io")
     maven("https://repo.papermc.io/repository/maven-public/")
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.21.11-R0.1-SNAPSHOT")
 }
 
 java {
@@ -17,6 +19,10 @@ java {
 }
 
 tasks {
+    assemble {
+        // Build the correct jar ready to drag-and-drop into your server plugins folder
+        dependsOn(reobfJar)
+    }
     runServer {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.

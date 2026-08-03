@@ -1,6 +1,6 @@
 # Changelog :D
-## Version 1.0.0 SNAPSHOT ;D
-This first snapshot added the core system needed to start the plugin and the following commands too!
+## Version 1.0.0 ;D
+This first version added the core system needed to start the plugin and the following commands too!
 - ``/echesttools`` && `/inventorytools`: This one lets you choose between 3 different arguments, `clear`, `see` and 
 `transfer` (arguments explained below).
 - `/inventoryclear`: this one is a better version of the vanilla `/clear` command, letting you choose between clearing 
@@ -27,3 +27,7 @@ Example:
     /inventorytools see nahum
 ````
 You will be able to see nahum's inventory
+
+## Version 1.0.1
+This version added the offline function to echesttools, now you can use all arguments in echesttools to all players to have ever connected to your server instead of just the ones online. This was made by reading and modifying player data directly into the world's folder instead of relying on paper's tools.  
+For the moment, the offlines options are unaviable for inventorytools and inventoryclear, i have to work on a centralized data manager for that so it isn't as chaotic as it is rn, see you next update ;D
