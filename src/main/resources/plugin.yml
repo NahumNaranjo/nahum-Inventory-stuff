@@ -8,18 +8,18 @@ load: POSTWORLD
 commands:
   echesttools:
     description: Some echest tweaks and tools
-    permission: nahumImventoryStuff.echesttools
+    permission: nahum.echesttools
     permission-message: You do not have permission to use this command!
     usage: /<command> <username> (optional)<username>
 
   inventorytools:
     description: Some inventory tweaks and tools
-    permission: nahumImventoryStuff.inventorytools
+    permission: nahum.inventorytools
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username> (optional)<username>
 
   inventoryclear:
     description: Clears the items in the user's inventory or enderchest
-    permission: nahumImventoryStuff.inventoryclean
+    permission: nahum.inventoryclean
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username>
