@@ -1,11 +1,10 @@
 package dev.nahum.nahumInventoryStuff;
 
-import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 
 public class InventoryClear implements CommandExecutor {
     @Override
@@ -19,30 +18,27 @@ public class InventoryClear implements CommandExecutor {
         String option = args[0].toLowerCase();
         String playerName = args[1];
 
-        // Check if player is online
-        Player targetPlayer = Bukkit.getPlayerExact(playerName);
+        // Check if player exists
+        OfflinePlayer targetPlayer  = OfflinePlayerSync.getPlayer(playerName, sender);
         if (targetPlayer == null) {
-            sender.sendMessage(ChatColor.RED + "Player " + playerName + " is not online!");
             return true;
         }
 
         String playerDisplayName = targetPlayer.getName();
 
-        switch (option) {
+        switch (args[0].toLowerCase()) {
             case "all":
-                targetPlayer.getInventory().clear();
-                targetPlayer.getEnderChest().clear();
+                InventoryTools.cleanInventory(targetPlayer, sender);
+                EchestTools.cleanEnderchest(targetPlayer, sender);
                 sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
                 break;
 
             case "echest":
-                targetPlayer.getEnderChest().clear();
-                sender.sendMessage(ChatColor.GREEN + "Successfully cleared " + playerDisplayName + "'s ender chest!");
+                EchestTools.cleanEnderchest(targetPlayer, sender);
                 break;
 
             case "inventory":
-                targetPlayer.getInventory().clear();
-                sender.sendMessage(ChatColor.GREEN + "Successfully cleared " + playerDisplayName + "'s inventory!");
+                InventoryTools.cleanInventory(targetPlayer, sender);
                 break;
 
             default:
