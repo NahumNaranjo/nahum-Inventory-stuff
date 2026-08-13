@@ -6,7 +6,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://papermc.io")
     maven("https://repo.papermc.io/repository/maven-public/")
 }
 
@@ -20,15 +19,15 @@ java {
 
 tasks {
     assemble {
-        // Build the correct jar ready to drag-and-drop into your server plugins folder
         dependsOn(reobfJar)
     }
+
     runServer {
-        // Configure the Minecraft version for our task.
-        // This is the only required configuration besides applying the plugin.
-        // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21.11")
         jvmArgs("-Xms2G", "-Xmx2G")
+
+        // FIX: Force run-paper to use the reobfuscated production jar
+        pluginJars.from(reobfJar.flatMap { it.outputJar })
     }
 
     processResources {

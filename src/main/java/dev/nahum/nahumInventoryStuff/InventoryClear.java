@@ -31,14 +31,20 @@ public class InventoryClear implements CommandExecutor {
                 InventoryTools.cleanInventory(targetPlayer, sender);
                 EchestTools.cleanEnderchest(targetPlayer, sender);
                 sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
+                GoodLogger.info(sender.getName() + " has cleared all of " +
+                        playerDisplayName + "'s inventories using the command /inventoryclear!");
                 break;
 
             case "echest":
                 EchestTools.cleanEnderchest(targetPlayer, sender);
+                GoodLogger.info(sender.getName() + " has cleared " +
+                        playerDisplayName + "'s enderchest using the command /inventoryclear!");
                 break;
 
             case "inventory":
                 InventoryTools.cleanInventory(targetPlayer, sender);
+                GoodLogger.info(sender.getName() + " has cleared " +
+                        playerDisplayName + "'s inventory using the command /inventoryclear!");
                 break;
 
             default:

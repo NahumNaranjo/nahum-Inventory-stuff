@@ -23,6 +23,7 @@ import java.util.Optional;
 public class EchestTools implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+
         if (args.length == 0) {
             return false;
         }
@@ -62,6 +63,8 @@ public class EchestTools implements CommandExecutor {
                     }
                     seeEchest(targetPlayer, viewer,sender);
                     sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
+                    GoodLogger.info(sender.getName() + " is looking at " +
+                            targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"see\"!");
                     break;
 
                 case "transfer":
@@ -71,16 +74,21 @@ public class EchestTools implements CommandExecutor {
                     }
 
                     String giverName = args[2];
-                    if(OfflinePlayerSync.getPlayer(giverName, sender) != null){
-                        transferEchest(targetPlayer, OfflinePlayerSync.getPlayer(giverName, sender) , sender);
+                    OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(giverName, sender);
+                    if(giverPlayer != null){
+                        transferEchest(targetPlayer, giverPlayer, sender);
                     } else {
                         sender.sendMessage(ChatColor.RED + "Couldn't get " + giverName + "'s OfflinePlayer!");
                         return true;
                     }
+                    GoodLogger.info(sender.getName() + " transfered " +
+                            targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
                     break;
 
                 case "clear":
                     cleanEnderchest(targetPlayer,  sender);
+                    GoodLogger.info(sender.getName() + " has cleared " +
+                            targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"clear\"!");
                     break;
 
                 default:
@@ -138,15 +146,15 @@ public class EchestTools implements CommandExecutor {
     }
 
     public static boolean transferEchest(OfflinePlayer recipient, OfflinePlayer giverPlayer, CommandSender sender){
-        if (!(sender instanceof Player viewer)) {
-            sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
+        if (giverPlayer == null) {
+            if (sender != null) {
+                sender.sendMessage(ChatColor.RED + "Couldn't get the giver player's data!");
+            }
+            GoodLogger.warn("Attempted to transfer an ender chest with a null giver player.");
             return true;
         }
 
         String giverName = giverPlayer.getName();
-        if(giverPlayer == null){
-            return true;
-        }
 
         if(OfflinePlayerSync.isOnline(giverPlayer) && OfflinePlayerSync.isOnline(recipient)){
             recipient.getPlayer().getEnderChest().setContents(giverPlayer.getPlayer().getEnderChest().getContents());
@@ -157,12 +165,14 @@ public class EchestTools implements CommandExecutor {
                 CompoundTag rootTag = FileManager.getPlayerData(recipient.getUniqueId());
 
                 if(rootTag == null || giverTag == null){
-                    sender.sendMessage(ChatColor.RED + giverName + "'s player data is not a valid file!");
+                    GoodLogger.warn((rootTag == null ? recipient.getName() : giverName) + "'s player data is not a valid file!");
+                    sender.sendMessage(ChatColor.RED + (rootTag == null ? recipient.getName() : giverName) + "'s player data is not a valid file!");
                     return true;
                 }
 
                 Optional<ListTag> list =  giverTag.getList(NbtTags.getEchest());
                 if(list.isEmpty()){
+                    GoodLogger.warn(giverName + "'s Ender Chest is empty!");
                     sender.sendMessage(ChatColor.RED + giverName + "'s Ender Chest is empty!");
                     return true;
                 }
@@ -171,6 +181,7 @@ public class EchestTools implements CommandExecutor {
                 rootTag.put(NbtTags.getEchest(), listTag);
                 NbtIo.writeCompressed(rootTag, recipientData.toPath());
             } catch (Exception e){
+                GoodLogger.error(recipient.getName() + "'s player data is not a valid file!", e);
                 sender.sendMessage(ChatColor.RED + recipient.getName() + "'s player data is not a valid file!");
                 return true;
             }

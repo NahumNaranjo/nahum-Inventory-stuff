@@ -38,6 +38,9 @@ public class InventoryTools implements CommandExecutor {
 
             // Check if target is online
             OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName, sender);
+            if (targetPlayer == null) {
+                return true;
+            }
 
             switch (option) {
                 case "see":
@@ -48,6 +51,8 @@ public class InventoryTools implements CommandExecutor {
 
                     Player viewer = (Player) sender;
                     seeInventory(targetPlayer, viewer, sender);
+                    GoodLogger.info(sender.getName() + " is looking at " +
+                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"see\"!");
                     break;
 
                 case "transfer":
@@ -56,12 +61,40 @@ public class InventoryTools implements CommandExecutor {
                         return true;
                     }
 
-                    transferInventory(targetPlayer, OfflinePlayerSync.getPlayer(args[2], sender), sender);
+                    OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(args[2], sender);
+                    if (giverPlayer == null) {
+                        sender.sendMessage(ChatColor.RED + "Couldn't get " + args[2] + "'s OfflinePlayer!");
+                        return true;
+                    }
+
+                    transferInventory(targetPlayer, giverPlayer, sender, (byte)1);
+                    GoodLogger.info(sender.getName() + " transfered " +
+                            targetPlayer.getName() + "'s inventory to " + giverPlayer.getName() +
+                            "'s using the command /inventorytools with the argument \"transfer\"!");
                     break;
 
                 case "clear":
                     cleanInventory(targetPlayer, sender);
+                    GoodLogger.info(sender.getName() + " has cleared " +
+                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"clear\"!");
                     break;
+
+                case "swap":
+                    if (args.length < 3) {
+                        sender.sendMessage(ChatColor.RED + "Usage: /inventorytools transfer <recipient> <giver>");
+                        return true;
+                    }
+                    OfflinePlayer swapPlayer = OfflinePlayerSync.getPlayer(args[2], sender);
+                    if (swapPlayer == null) {
+                        sender.sendMessage(ChatColor.RED + "Couldn't get " + args[2] + "'s OfflinePlayer!");
+                        return true;
+                    }
+                    transferInventory(targetPlayer, swapPlayer, sender, (byte)0);
+                    GoodLogger.info(sender.getName() + " transfered " +
+                            targetPlayer.getName() + "'s inventory to " + swapPlayer.getName() +
+                            "'s using the command /inventorytools with the argument \"transfer\"!");
+                    return true;
+
 
                 default:
                     sender.sendMessage(ChatColor.RED + "Unknown option: " + option);
@@ -115,41 +148,54 @@ public class InventoryTools implements CommandExecutor {
         }
         return true;
     }
-    public static boolean transferInventory(OfflinePlayer recipient, OfflinePlayer giverPlayer, CommandSender sender){
-        if (!(sender instanceof Player viewer)) {
-            sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
-            return true;
-        }
 
+    // mode = 0 for swap, any other value will result in a transfer
+    public static boolean transferInventory(OfflinePlayer recipient, OfflinePlayer giverPlayer, CommandSender sender, byte mode){
         String giverName = giverPlayer.getName();
-        if(giverPlayer == null){
-            return true;
-        }
 
         if(OfflinePlayerSync.isOnline(giverPlayer) && OfflinePlayerSync.isOnline(recipient)){
-            recipient.getPlayer().getEnderChest().setContents(giverPlayer.getPlayer().getEnderChest().getContents());
+            if(mode == 0){
+                ItemStack[] helper = recipient.getPlayer().getInventory().getContents();
+                recipient.getPlayer().getInventory().setContents(giverPlayer.getPlayer().getInventory().getContents());
+                giverPlayer.getPlayer().getInventory().setContents(helper);
+            } else {
+                recipient.getPlayer().getInventory().setContents(giverPlayer.getPlayer().getInventory().getContents());
+            }
         } else{
             try{
                 File recipientData = FileManager.getPlayerFile(recipient.getUniqueId());
                 CompoundTag giverTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
                 CompoundTag rootTag = FileManager.getPlayerData(recipient.getUniqueId());
 
-                if(rootTag == null || giverTag == null){
-                    sender.sendMessage(ChatColor.RED + giverName + "'s player data is not a valid file!");
+                if(rootTag == null){
+                    GoodLogger.warn(recipient.getName() + "'s player data is not a valid file!");
+                    return true;
+                }
+
+                if(giverTag == null){
+                    GoodLogger.warn(giverName + "'s player data is not a valid file!");
                     return true;
                 }
 
                 Optional<ListTag> list =  giverTag.getList(NbtTags.getInventory());
                 if(list.isEmpty()){
-                    sender.sendMessage(ChatColor.RED + giverName + "'s Inventory is empty!");
+                    GoodLogger.warn(giverName + "'s Inventory is empty!");
                     return true;
                 }
 
                 ListTag listTag = list.get();
+                if(mode == 0){
+                    ListTag newListTag = rootTag.getListOrEmpty(NbtTags.getInventory());
+                    if(!newListTag.isEmpty()){
+                        giverTag.put(NbtTags.getInventory(), newListTag);
+                        NbtIo.writeCompressed(giverTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
+                    }
+                }
+
                 rootTag.put(NbtTags.getInventory(), listTag);
                 NbtIo.writeCompressed(rootTag, recipientData.toPath());
             } catch (Exception e){
-                sender.sendMessage(ChatColor.RED + recipient.getName() + "'s player data is not a valid file!");
+                GoodLogger.error(recipient.getName() + "'s player data is not a valid file!");
                 return true;
             }
         }
@@ -212,6 +258,9 @@ public class InventoryTools implements CommandExecutor {
             }
         }
         viewer.openInventory(inventory);
+        return true;
+    }
+    public static boolean consoleSee(){
         return true;
     }
 }
