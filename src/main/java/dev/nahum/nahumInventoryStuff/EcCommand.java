@@ -19,11 +19,19 @@ public class EcCommand implements CommandExecutor {
             return true;
         }
         if(args.length == 0){
+            if(!sender.hasPermission("nahum.echest.self") && !sender.hasPermission("nahum.echest")){
+                sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                return true;
+            }
             viewer.openInventory(viewer.getEnderChest());
             return true;
         }
         String option = args[0];
         if (args.length == 1) {
+            if(!sender.hasPermission("nahum.echest.other") && !sender.hasPermission("nahum.echest")){
+                sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                return true;
+            }
             OfflinePlayer offlinePlayer = OfflinePlayerSync.getPlayer(option, sender);
             if (offlinePlayer != null) {
                 EchestTools.seeEchest(offlinePlayer, viewer, sender);
@@ -39,6 +47,10 @@ public class EcCommand implements CommandExecutor {
         }
         switch (option) {
             case "clear":
+                if(!sender.hasPermission("nahum.echest") && !sender.hasPermission("nahum.enderchesttools.clear") &&  !sender.hasPermission("nahum.enderchesttools")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
                 EchestTools.cleanEnderchest(offlinePlayer, sender);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         offlinePlayer.getName() + "'s echest using the command /ec with the argument \"clear\"!");

@@ -7,17 +7,15 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-public class NahumInventoryStuffCommand implements CommandExecutor {
+public class NahumInventoryStuffCommand implements TabExecutor {
     @Override
     public boolean onCommand (CommandSender sender, Command cmd, String label, String[]args){
         if(args.length==0){
@@ -27,6 +25,10 @@ public class NahumInventoryStuffCommand implements CommandExecutor {
 
         switch(args[0].toLowerCase()){
             case "restore":
+                if(!sender.hasPermission("nahum.nahumstuff") && !sender.hasPermission("nahum.nahumstuff.restore")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
                 if(args.length==2){
                     GoodLogger.info(sender.getName() + " is trying to restore from a backup.");
                     String name = getBackupFileName(args[1]);
@@ -48,6 +50,10 @@ public class NahumInventoryStuffCommand implements CommandExecutor {
                 }
                 return true;
             case "backup":
+                if(!sender.hasPermission("nahum.nahumstuff") && !sender.hasPermission("nahum.nahumstuff.backup")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
                 GoodLogger.info(sender.getName() + " is trying to save a backup.");
                 Map<UUID, LinkedList<ListTag>> onlineUsers = FileManager.fetchAllOnlineUserData();
                 List<UUID> uuids =  new LinkedList<>();
@@ -64,6 +70,10 @@ public class NahumInventoryStuffCommand implements CommandExecutor {
                     }
                 break;
             case "debug":
+                if(!sender.hasPermission("nahum.nahumstuff") && !sender.hasPermission("nahum.nahumstuff.debug")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    return true;
+                }
                 if(args.length==1){
                     NahumInventoryStuff.setOnDebug(!NahumInventoryStuff.getOnDebug());
                     if(NahumInventoryStuff.getOnDebug()){
@@ -104,6 +114,39 @@ public class NahumInventoryStuffCommand implements CommandExecutor {
         }
         return true;
     }
+
+     @Override
+     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args){
+        List<String> completions = new ArrayList<>();
+        String currentInput = null;
+        if(args.length == 1){
+            if(sender.hasPermission("nahum.nahumstuff")){
+                completions.add("debug");
+                completions.add("backup");
+                completions.add("restore");
+                completions.removeIf(option -> !option.toLowerCase().startsWith(args[0].toLowerCase()));
+                return completions;
+            }
+            if(sender.hasPermission("nahum.nahumstuff.debug")) {
+                completions.add("debug");
+            }
+            if(sender.hasPermission("nahum.nahumstuff.restore")) {
+                completions.add("restore");
+            }
+            if(sender.hasPermission("nahum.nahumstuff.backup")) {
+                completions.add("backup");
+            }
+            currentInput = args[0].toLowerCase();
+        }
+
+        if(currentInput == null){
+            return new ArrayList<>();
+        }
+
+        String unmatched = currentInput;
+        completions.removeIf(option -> !option.toLowerCase().startsWith(unmatched));
+        return completions;
+     }
 
     public String getBackupFileName(String input){
         File backupFolder = FileManager.getBackupFolder();

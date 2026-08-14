@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.Command;
 import org.bukkit.ChatColor;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -16,11 +17,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 
 import java.io.File;
-import java.util.Optional;
+import java.util.*;
 
 @SuppressWarnings({"deprecation", "SpellCheckingInspection", "NullableProblems"})
 
-public class EchestTools implements CommandExecutor {
+public class EchestTools implements TabExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
@@ -54,6 +55,10 @@ public class EchestTools implements CommandExecutor {
 
             switch (option) {
                 case "see":
+                    if(!sender.hasPermission("nahum.enderchesttools.see") && !sender.hasPermission("nahum.enderchesttools")){
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
                     Player viewer;
                     if(sender instanceof Player){
                         viewer = (Player) sender;
@@ -68,6 +73,10 @@ public class EchestTools implements CommandExecutor {
                     break;
 
                 case "transfer":
+                    if(!sender.hasPermission("nahum.enderchesttools.transfer") && !sender.hasPermission("nahum.enderchesttools")){
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
                     if (args.length < 3) {
                         sender.sendMessage(ChatColor.RED + "Usage: /echesttools transfer <recipient> <giver>");
                         return true;
@@ -86,6 +95,10 @@ public class EchestTools implements CommandExecutor {
                     break;
 
                 case "clear":
+                    if(!sender.hasPermission("nahum.enderchesttools.clear") && !sender.hasPermission("nahum.enderchesttools")){
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
                     cleanEnderchest(targetPlayer,  sender);
                     GoodLogger.info(sender.getName() + " has cleared " +
                             targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"clear\"!");
@@ -100,6 +113,52 @@ public class EchestTools implements CommandExecutor {
         }
 
         return false;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+        List<String> completions = new ArrayList<>();
+        String currentInput = null;
+        if(args.length == 1) {
+            if(sender.hasPermission("nahum.enderchesttools")){
+                completions.add("clear");
+                completions.add("swap");
+                completions.add("transfer");
+                completions.add("see");
+                completions.removeIf(option -> !option.toLowerCase().startsWith(args[0].toLowerCase()));
+                return completions;
+            }
+            if(sender.hasPermission("nahum.enderchesttools.see")){
+                completions.add("see");
+            }
+            if(sender.hasPermission("nahum.enderchesttools.swap")){
+                completions.add("swap");
+            }
+            if(sender.hasPermission("nahum.enderchesttools.transfer")){
+                completions.add("transfer");
+            }
+            if(sender.hasPermission("nahum.enderchesttools.clear")){
+                completions.add("clear");
+            }
+            currentInput = args[0].toLowerCase();
+        }
+
+        if(args.length == 2) {
+            List<String> players = new LinkedList<>();
+            for(OfflinePlayer player : OfflinePlayerSync.getAllPlayers()){
+                players.add(player.getName());
+            }
+            Collections.sort(players);
+            players.removeIf(option -> !option.toLowerCase().startsWith(args[1]));
+            return players;
+        }
+
+        if(currentInput == null) {
+            return new ArrayList<>();
+        }
+        String unmatched = currentInput;
+        completions.removeIf(option -> !option.toLowerCase().startsWith(unmatched));
+        return completions;
     }
 
     public static boolean cleanEnderchest(OfflinePlayer player, CommandSender sender){

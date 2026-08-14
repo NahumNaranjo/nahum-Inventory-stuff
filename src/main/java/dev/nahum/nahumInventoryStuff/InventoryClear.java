@@ -28,6 +28,12 @@ public class InventoryClear implements CommandExecutor {
 
         switch (args[0].toLowerCase()) {
             case "all":
+                if(!sender.hasPermission("nahum.inventoryclear") &&
+                        (!sender.hasPermission("nahum.inventorytools") && !sender.hasPermission("nahum.echesttools")) &&
+                        (!sender.hasPermission("nahum.echesttools.clear") && !sender.hasPermission("nahum.inventorytools.clear"))){
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    return true;
+                }
                 InventoryTools.cleanInventory(targetPlayer, sender);
                 EchestTools.cleanEnderchest(targetPlayer, sender);
                 sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
@@ -36,12 +42,24 @@ public class InventoryClear implements CommandExecutor {
                 break;
 
             case "echest":
+                if(!sender.hasPermission("nahum.inventoryclear") &&
+                        !sender.hasPermission("nahum.echesttools") &&
+                        !sender.hasPermission("nahum.echesttools.clear")){
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    return true;
+                }
                 EchestTools.cleanEnderchest(targetPlayer, sender);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         playerDisplayName + "'s enderchest using the command /inventoryclear!");
                 break;
 
             case "inventory":
+                if(!sender.hasPermission("nahum.inventoryclear") &&
+                        !sender.hasPermission("nahum.inventorytools") &&
+                        !sender.hasPermission("nahum.inventorytools.clear")){
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    return true;
+                }
                 InventoryTools.cleanInventory(targetPlayer, sender);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         playerDisplayName + "'s inventory using the command /inventoryclear!");

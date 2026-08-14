@@ -4,6 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class OfflinePlayerSync {
     public static OfflinePlayer getPlayer(String name, CommandSender sender){
@@ -21,6 +26,15 @@ public class OfflinePlayerSync {
 
         GoodLogger.debug("Player lookup success: " + player.getName() + " online=" + player.isOnline());
         return player;
+    }
+
+    public static List<OfflinePlayer> getAllPlayers(){
+        List<OfflinePlayer> players = new ArrayList<>();
+        Collections.addAll(players, Bukkit.getOfflinePlayers());
+        for(Player player :  Bukkit.getOnlinePlayers()){
+            players.add(Bukkit.getOfflinePlayer(player.getName()));
+        }
+        return players;
     }
 
     public static boolean isOnline(OfflinePlayer player){

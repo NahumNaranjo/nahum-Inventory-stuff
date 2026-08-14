@@ -34,3 +34,12 @@ For the moment, the offlines options are unaviable for inventorytools and invent
 
 ## Version 1.1.0
 Offline player support is finally universal, this version added not only offline support but also technical improvements to `EchestTools.java`, `InventoryTools.java` and `InventoryClear.java` (they got reorganized and refactored) and made some other minor technical changes such as `OfflinePlayerSync.java`, `NbtTags.java` and `FileManager.java` now storing different variables or containing certain reusable methods.
+
+## Version 1.2.0-Snapshot
+- ``/inv`` && `/ec` commands
+- `transfer` fixes
+- `swap` argument
+- `inventorytools` and `enderchesttools` fixes
+- ``Serializer`` improvements
+- ``FileManager`` improvements
+- **Backup System**

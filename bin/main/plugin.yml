@@ -8,21 +8,48 @@ load: POSTWORLD
 commands:
   echesttools:
     description: Some echest tweaks and tools
-    permission: nahum.echesttools
+    permissions:
+      nahum.enderchesttools:
+        description: Access to all of the functionalities
+        default: op
+      nahum.enderchesttools.clear:
+        description: Access to the clear argument
+        default: false
+      nahum.endercesttools.see:
+        description: Access to the see argument
+        default: false
+      nahum.enderchesttools.transfer:
+        description: Acces to the transfer argument
+        default: false
     permission-message: You do not have permission to use this command!
     usage: /<command> <username> (optional)<username>
     aliases: [etools, et]
 
   inventorytools:
     description: Some inventory tweaks and tools
-    permission: nahum.inventorytools
+    permissions:
+      nahum.inventorytools:
+        description: Access to all of the functionalities
+        default: op
+      nahum.inventorytools.clear:
+        description: Access to the clear argument
+        default: false
+      nahum.inventorytools.see:
+        description: Access to the see argument
+        default: false
+      nahum.inventorytools.transfer:
+        description: Acces to the transfer argument
+        default: false
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username> (optional)<username>
     aliases: [invtools, itools, invt, it]
 
   inventoryclear:
     description: Clears the items in the user's inventory or enderchest
-    permission: nahum.inventoryclear
+    permissions:
+      nahum.inventoryclear:
+        description: Access to all the arguments
+        default: op
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username>
     aliases: [invclear, iclear, invc, ic]
@@ -30,6 +57,16 @@ commands:
   ec:
     description: Some echest tweaks and tools
     permission: nahum.ec
+    permissions:
+      nahum.echest:
+        description: Access to all the arguments
+        default: op
+      nahum.echest.self:
+        description: Access to same user's echest
+        default: true
+      nahum.echest.other:
+        description: Acces to any user's echest
+        default: false
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username>
     aliases: [ecc, echest]
@@ -37,13 +74,34 @@ commands:
   inv:
     description: Some inv tweaks and tools
     permission: nahum.inv
+    nahum.inv:
+      description: Access to all the arguments
+      default: op
+    nahum.inv.self:
+      description: Access to same user's echest
+      default: true
+    nahum.inv.other:
+      description: Acces to any user's echest
+      default: false
     permission-message: You do not have permission to use this command!
     usage: /<command> <option> <username>
     aliases: [inventory, iv]
 
   nahumstuff:
     description: NahumInventoryStuff control pannel
-    permission: nahum.stuff
+    permissions:
+      nahum.nahumstuff:
+        description: Access to all the features of the command
+        default: op
+      nahum.nahumstuff.debug:
+        description: Access to the debug argument
+        default: op
+      nahum.nahumstuff.backup:
+        description: Access to the backup argument
+        default: false
+      nahum.nahumstuff.restore:
+        description: Access to the restore argument
+        default: false
     permission-message: You do not have permission to use this command!
     usage: /<command> <option>
     aliases: [nahuminvstuff, nahuminv, nahumis, nahumiv]
