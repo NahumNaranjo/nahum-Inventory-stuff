@@ -54,9 +54,26 @@ public class InventoryTools implements TabExecutor {
                     }
 
                     Player viewer = (Player) sender;
+                    NahumInventoryStuff.addToAdminWatchList(viewer);
                     seeInventory(targetPlayer, viewer, sender);
                     GoodLogger.info(sender.getName() + " is looking at " +
                             targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"see\"!");
+                    break;
+                case "edit":
+                    if(!sender.hasPermission("nahum.inventorytools.edit") && !sender.hasPermission("nahum.inventorytools")){
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
+                    if (!(sender instanceof Player)) {
+                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
+                        return true;
+                    }
+                    viewer = (Player) sender;
+                    NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
+                    GoodLogger.debug("Added " + viewer.getUniqueId() + " to is editing");
+                    editInventory(targetPlayer, viewer, sender);
+                    GoodLogger.info(sender.getName() + " is editing at " +
+                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"edit\"!");
                     break;
 
                 case "transfer":
@@ -225,83 +242,16 @@ public class InventoryTools implements TabExecutor {
             Player onlinePlayer = null;
             if(OfflinePlayerSync.isOnline(recipient)){
                 onlinePlayer = recipient.getPlayer();
-                CompoundTag rootTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
-                ItemStack[] helper; // lifesaver :D
-                if(rootTag == null){
-                    GoodLogger.warn("Couldn't find player data for player " + giverPlayer.getName());
-                    return false;
+                FileManager.saveInventory(FileManager.loadInventory(giverPlayer), DataParser.getUuidFromObject(onlinePlayer));
+                if(mode == 0) {
+                    FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(giverPlayer));
                 }
-
-                ItemStack[] fullGiverInv = Serializer.buildFullInventoryFromPlayerTag(rootTag);
-                ItemStack[] fullInv = onlinePlayer.getInventory().getContents();
-                if(mode == 0){
-                    rootTag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
-                            getItemStackArray(fullInv, Serializer.MAIN_INVENTORY_SIZE, 0)));
-
-                    rootTag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
-                            getItemStackArray(fullInv, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
-
-                    rootTag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
-                            getItemStackArray(fullInv, 1, Serializer.OFFHAND_SLOT)));
-
-                    try{
-                        NbtIo.writeCompressed(rootTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
-                    } catch (Exception e){
-                        GoodLogger.warn("Couldn't save player data for player " + giverPlayer.getName());
-                        return false;
-                    }
-                }
-
-                onlinePlayer.getInventory().setContents(
-                        getItemStackArray(fullGiverInv, Serializer.MAIN_INVENTORY_SIZE, 0));
-
-                onlinePlayer.getInventory().setArmorContents(
-                        getItemStackArray(fullGiverInv, Serializer.ARMORSIZE, Serializer.ARMOR_START));
-
-                onlinePlayer.getInventory().setItemInOffHand(
-                        getItemStackArray(fullGiverInv, 1, Serializer.OFFHAND_SLOT)[0]);
-
-                return true;
             } else {
                 onlinePlayer = giverPlayer.getPlayer();
-                ListTag tag = Serializer.serializeToListTag(onlinePlayer.getInventory().getContents());
-
-                File playerFile = FileManager.getPlayerFile(recipient.getUniqueId());
-                CompoundTag rootTag = FileManager.getPlayerData(onlinePlayer.getUniqueId());
-
-                if(rootTag == null){
-                    GoodLogger.warn("Couldn't find player data for player " + giverPlayer.getName());
-                    return false;
-                }
-
-                ItemStack[] giverInv = onlinePlayer.getInventory().getContents();
                 if(mode == 0){
-                    ItemStack[] recipientInv = Serializer.buildFullInventoryFromPlayerTag(rootTag);
-                    onlinePlayer.getInventory().setContents(
-                            getItemStackArray(recipientInv, Serializer.MAIN_INVENTORY_SIZE, 0));
-
-                    onlinePlayer.getInventory().setArmorContents(
-                            getItemStackArray(recipientInv, Serializer.ARMORSIZE, Serializer.ARMOR_START));
-
-                    onlinePlayer.getInventory().setItemInOffHand(
-                            getItemStackArray(recipientInv, 1, Serializer.OFFHAND_SLOT)[0]);
+                    FileManager.pasteInventory(FileManager.loadInventory(recipient), onlinePlayer);
                 }
-
-                rootTag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
-                        getItemStackArray(giverInv, Serializer.MAIN_INVENTORY_SIZE, 0)));
-
-                rootTag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
-                        getItemStackArray(giverInv, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
-
-                rootTag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
-                        getItemStackArray(giverInv, 1, Serializer.OFFHAND_SLOT)));
-
-                try{
-                    NbtIo.writeCompressed(rootTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
-                } catch (Exception e){
-                    GoodLogger.warn("Couldn't save player data for player " + giverPlayer.getName());
-                    return false;
-                }
+                FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(recipient));
             }
         } else if (!OfflinePlayerSync.isOnline(giverPlayer) && !OfflinePlayerSync.isOnline(recipient)){
             try{
@@ -311,18 +261,18 @@ public class InventoryTools implements TabExecutor {
 
                 if(rootTag == null){
                     GoodLogger.warn(recipient.getName() + "'s player data is not a valid file!");
-                    return true;
+                    return false;
                 }
 
                 if(giverTag == null){
                     GoodLogger.warn(giverName + "'s player data is not a valid file!");
-                    return true;
+                    return false;
                 }
 
                 Optional<ListTag> list =  giverTag.getList(NbtTags.getInventory());
                 if(list.isEmpty()){
                     GoodLogger.warn(giverName + "'s Inventory is empty!");
-                    return true;
+                    return false;
                 }
 
                 ListTag listTag = list.get();
@@ -338,7 +288,7 @@ public class InventoryTools implements TabExecutor {
                 NbtIo.writeCompressed(rootTag, recipientData.toPath());
             } catch (Exception e){
                 GoodLogger.error(recipient.getName() + "'s player data is not a valid file!");
-                return true;
+                return false;
             }
         }
 
@@ -347,11 +297,6 @@ public class InventoryTools implements TabExecutor {
         return true;
     }
 
-    public static ItemStack[] getItemStackArray(ItemStack[] items, int size, int slot){
-        ItemStack[] stack = new ItemStack[size];
-        System.arraycopy(items, slot, stack, 0, size);
-        return stack;
-    }
 
     public static boolean seeInventory(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
         // Create a copy of the ender chest to prevent modifications
@@ -405,9 +350,60 @@ public class InventoryTools implements TabExecutor {
                 sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
             }
         }
-        viewer.openInventory(inventory);
         return true;
     }
+    public static boolean editInventory(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
+        Inventory inventory = Bukkit.createInventory(null, InventoryType.PLAYER, ChatColor.BOLD + targetPlayer.getName() + "'s Inventory");
+        if(targetPlayer.getPlayer() != null){
+            viewer.openInventory(targetPlayer.getPlayer().getInventory());
+        } else{
+            try{
+                CompoundTag rootTag = FileManager.getPlayerData(targetPlayer.getUniqueId());
+                if(rootTag == null){
+                    sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s data file is empty!");
+                    return true;
+                }
+
+                Optional<ListTag> inventoryList = rootTag.getList(NbtTags.getInventory());
+                if(inventoryList.isEmpty()){
+                    sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s Inventory is empty!");
+                    return true;
+                }
+
+                ListTag inventoryListTag = inventoryList.get();
+                for(int i = 0; i < inventoryListTag.size(); i++){
+                    CompoundTag itemTag = inventoryListTag.getCompoundOrEmpty(i);
+                    if(itemTag.contains(NbtTags.getSlot()) && itemTag.contains(NbtTags.getId())){
+
+                        Optional<Byte> slot = itemTag.getByte(NbtTags.getSlot());
+                        Optional<Integer> count = itemTag.getInt(NbtTags.getCount());
+                        Optional<String> id = itemTag.getString(NbtTags.getId());
+
+                        if(slot.isPresent() && count.isPresent() && id.isPresent()){
+                            Material material = Material.matchMaterial(id.get());
+                            if(material == null){
+                                sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s invalid id found, check for corrupted files!");
+                                return true;
+                            }
+                            ItemStack item = new ItemStack(material, count.get());
+                            if(itemTag.contains(NbtTags.getComponents())){
+                                Bukkit.getUnsafe().modifyItemStack(item, itemTag.toString());
+                            }
+                            inventory.setItem(slot.get(), item);
+                        } else {
+                            sender.sendMessage(ChatColor.RED + "Couldn't parse the user's data");
+                            return true;
+                        }
+                    }
+                }
+                viewer.openInventory(inventory);
+            } catch (Exception e){
+                sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
+            }
+        }
+        return true;
+    }
+
     public static boolean consoleSee(){
         return true;
     }

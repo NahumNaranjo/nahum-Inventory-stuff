@@ -64,11 +64,27 @@ public class EchestTools implements TabExecutor {
                         sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
                         return true;
                     }
+                    NahumInventoryStuff.addToAdminWatchList(viewer);
                     seeEchest(targetPlayer, viewer, sender);
                     sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
                     GoodLogger.info(sender.getName() + " is looking at " +
                             targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"see\"!");
-                    String hello = "0";
+                    break;
+                case "edit":
+                    if (!sender.hasPermission("nahum.enderchesttools.edit") && !sender.hasPermission("nahum.enderchesttools")) {
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
+                    if (sender instanceof Player) {
+                        viewer = (Player) sender;
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
+                        return true;
+                    }
+                    NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
+                    editEchest(targetPlayer, viewer, sender);
+                    sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
+                    GoodLogger.info(sender.getName() + " is editing " + targetPlayer.getName() + "'s ender chest!");
                     break;
 
                 case "transfer":
@@ -383,7 +399,57 @@ public class EchestTools implements TabExecutor {
                 sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
             }
         }
-        viewer.openInventory(enderChest);
+        return true;
+    }
+    public static boolean editEchest(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
+        Inventory enderChest = Bukkit.createInventory(null, InventoryType.ENDER_CHEST, ChatColor.BOLD + targetPlayer.getName() + "'s Ender Chest");
+        if(targetPlayer.getPlayer() != null){
+            viewer.openInventory(targetPlayer.getPlayer().getEnderChest());
+        } else{
+            try{
+                CompoundTag rootTag = FileManager.getPlayerData(targetPlayer.getUniqueId());
+                if(rootTag == null){
+                    sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s data file is empty!");
+                    return true;
+                }
+
+                Optional<ListTag> enderChestList = rootTag.getList(NbtTags.getEchest());
+                if(enderChestList.isEmpty()){
+                    sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s Ender Chest is empty!");
+                    return true;
+                }
+
+                ListTag enderChestListTag = enderChestList.get();
+                for(int i = 0; i < enderChestListTag.size(); i++){
+                    CompoundTag itemTag = enderChestListTag.getCompoundOrEmpty(i);
+                    if(itemTag.contains(NbtTags.getSlot()) && itemTag.contains(NbtTags.getId())){
+
+                        Optional<Byte> slot = itemTag.getByte(NbtTags.getSlot());
+                        Optional<Integer> count = itemTag.getInt(NbtTags.getCount());
+                        Optional<String> id = itemTag.getString(NbtTags.getId());
+
+                        if(slot.isPresent() && count.isPresent() && id.isPresent()){
+                            Material material = Material.matchMaterial(id.get());
+                            if(material == null){
+                                sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s invalid id found, check for corrupted files!");
+                                return true;
+                            }
+                            ItemStack item = new ItemStack(material, count.get());
+                            if(itemTag.contains(NbtTags.getComponents())){
+                                Bukkit.getUnsafe().modifyItemStack(item, itemTag.toString());
+                            }
+                            enderChest.setItem(slot.get(), item);
+                        } else {
+                            sender.sendMessage(ChatColor.RED + "Couldn't parse the user's data");
+                            return true;
+                        }
+                    }
+                }
+                viewer.openInventory(enderChest);
+            } catch (Exception e){
+                sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
+            }
+        }
         return true;
     }
 }

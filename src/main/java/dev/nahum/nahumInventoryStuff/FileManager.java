@@ -7,8 +7,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -358,5 +358,59 @@ public class FileManager {
         }
         GoodLogger.info("Fetched " + type + " data for " + count + " users ;D");
         return returning;
+    }
+
+    public static void saveEchest(ItemStack[] contents, UUID uuid){
+        File file = getPlayerFile(uuid);
+        CompoundTag tag = getPlayerData(uuid);
+
+        tag.put(NbtTags.getEchest(), Serializer.serializeToListTag(contents));
+        try{
+            NbtIo.writeCompressed(tag, file.toPath());
+        } catch(IOException e){
+            GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
+        }
+    }
+
+    public static void saveInventory(ItemStack[] contents, Object recipient){
+        UUID uuid = DataParser.getUuidFromObject(recipient);
+        File file = getPlayerFile(uuid);
+        CompoundTag tag = getPlayerData(uuid);
+
+        if(tag == null){
+            GoodLogger.warn("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + "!");
+            return;
+        }
+
+        tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+                DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0)));
+
+        tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+                DataParser.getItemStackArray(contents, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
+
+        tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+                DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)));
+
+        try{
+            NbtIo.writeCompressed(tag, file.toPath());
+        } catch(IOException e){
+            GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
+        }
+    }
+
+    public static Player pasteInventory(ItemStack[] contents, Player recipient){
+        recipient.getInventory().setContents(
+                DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0));
+
+        recipient.getInventory().setArmorContents(
+                DataParser.getItemStackArray(contents, Serializer.ARMORSIZE, Serializer.ARMOR_START));
+
+        recipient.getInventory().setItemInOffHand(
+                DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)[0]);
+        return recipient;
+    }
+
+    public static ItemStack[] loadInventory(Object giver){
+        return Serializer.buildFullInventoryFromPlayerTag(getPlayerData(DataParser.getUuidFromObject(giver)));
     }
 }

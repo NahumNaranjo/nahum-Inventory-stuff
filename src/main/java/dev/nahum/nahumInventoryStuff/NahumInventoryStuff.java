@@ -1,13 +1,17 @@
 package dev.nahum.nahumInventoryStuff;
 
+import net.minecraft.nbt.ListTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.io.File;
+import java.io.ObjectInputFilter;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -16,6 +20,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private final static String date = "14/August/26";
     private static NahumInventoryStuff plugin;
     private static List<UUID> adminWatchList = new ArrayList<>();
+    private static List<UUID> playerWatchList = new ArrayList<>();
+    private static Map<UUID, UUID> isEditingList = new HashMap<>();
+    private static Instant lastTimeBackuped;
 
     public static boolean onDebug = false;
 
@@ -31,17 +38,36 @@ public final class NahumInventoryStuff extends JavaPlugin {
     static public boolean getOnDebug() {return onDebug;}
     static public void setOnDebug(boolean newDebug) {onDebug = newDebug;}
 
-    static public boolean isOnAdminWatchList(UUID uuid){return adminWatchList.contains(uuid);}
-    static public boolean isOnAdminWatchList(Player player){return adminWatchList.contains(player.getUniqueId());}
-    static public boolean isOnAdminWatchList(OfflinePlayer player){return adminWatchList.contains(player.getUniqueId());}
+    static public boolean isOnAdminWatchList(Object object){
+        return adminWatchList.contains(DataParser.getUuidFromObject(object));
+    }
 
-    static public void addToAdminWatchList(UUID uuid){adminWatchList.add(uuid);}
-    static public void addToAdminWatchList(Player player){adminWatchList.add(player.getUniqueId());}
-    static public void addToAdminWatchList(OfflinePlayer player){adminWatchList.add(player.getUniqueId());}
+    static public void addToAdminWatchList(Object object){
+        adminWatchList.add(DataParser.getUuidFromObject(object));
+    }
+    static public void removeFromAdminWatchList(Object object){
+        adminWatchList.remove(DataParser.getUuidFromObject(object));
+    }
 
-    static public void removeFromAdminWatchList(UUID uuid){adminWatchList.remove(uuid);}
-    static public void removeFromAdminWatchList(Player player){adminWatchList.remove(player.getUniqueId());}
-    static public void removeFromAdminWatchList(OfflinePlayer player){adminWatchList.remove(player.getUniqueId());}
+    static public boolean isOnIsEditingList(Object object){
+        return isEditingList.containsKey(DataParser.getUuidFromObject(object));
+    }
+
+    static public void addToIsEditingList(Object admin, Object victim){
+        isEditingList.put(DataParser.getUuidFromObject(admin), DataParser.getUuidFromObject(victim));
+    }
+
+    static public UUID getVictimFromIsEditingList(Object admin){
+        return isEditingList.get(DataParser.getUuidFromObject(admin));
+    }
+
+    static public void removeFromIsEditingList(Object admin, Object victim){
+        if(victim == null) {
+            isEditingList.remove(DataParser.getUuidFromObject(admin), getVictimFromIsEditingList(admin));
+            return;
+        }
+        isEditingList.remove(DataParser.getUuidFromObject(admin), DataParser.getUuidFromObject(victim));
+    }
 
 
 
@@ -70,6 +96,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
         GoodLogger.debug("World folder: " + Bukkit.getWorlds().getFirst().getWorldFolder().getAbsolutePath());
         GoodLogger.debug("Plugin data folder: " + getDataFolder().getAbsolutePath());
 
+        getServer().getPluginManager().registerEvents(new InventorySecurityWatcher(), this);
 
 
         CompletableFuture.supplyAsync(() -> {
@@ -99,7 +126,149 @@ public final class NahumInventoryStuff extends JavaPlugin {
             GoodLogger.error(ex.getMessage());
             return null;
         });
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    // Check if auto-backup is enabled
+                    if (!ConfigManager.hasAutoBackup()) {
+                        GoodLogger.debug("Auto-backup is disabled in config");
+                        return;
+                    }
 
+                    GoodLogger.debug("=== Backup Check ===");
+                    GoodLogger.debug("Current time: " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                    GoodLogger.debug("Fixed mode: " + ConfigManager.isFixedMode());
+
+                    // Initialize lastBackupTime if null
+                    if (lastTimeBackuped == null) {
+                        GoodLogger.info("Initializing backup system...");
+                        performBackup();
+                        lastTimeBackuped = Instant.now();
+                        GoodLogger.debug("Initial backup completed at: " + Instant.now());
+                        return;
+                    }
+
+                    if (ConfigManager.isFixedMode()) {
+                        handleFixedBackup();
+                    } else {
+                        handleDurationBackup();
+                    }
+                } catch (Exception e) {
+                    GoodLogger.error("Backup scheduler error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+
+            private void handleFixedBackup() {
+                GoodLogger.debug("--- Fixed Mode Check ---");
+
+                LocalTime now = LocalTime.now();
+                LocalTime scheduled = ConfigManager.getParsedSchedule();
+
+                if (scheduled == null) {
+                    GoodLogger.warn("Fixed mode enabled but schedule is invalid!");
+                    return;
+                }
+
+                GoodLogger.debug("Current time: " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
+                GoodLogger.debug("Scheduled time: " + scheduled.format(DateTimeFormatter.ofPattern("HH:mm")));
+                GoodLogger.debug("Time difference: " +
+                        Math.abs(Duration.between(now, scheduled).getSeconds()) + " seconds");
+
+                // Check if it's time (within 30 seconds window)
+                long secondsDifference = Math.abs(Duration.between(now, scheduled).getSeconds());
+                boolean isTime = secondsDifference < 30;
+
+                GoodLogger.debug("Is it time? " + isTime);
+
+                if (isTime) {
+                    // Check if we haven't backed up today
+                    LocalDate lastBackupDate = LocalDate.ofInstant(lastTimeBackuped, ZoneId.systemDefault());
+                    LocalDate today = LocalDate.now();
+
+                    GoodLogger.debug("Last backup date: " + lastBackupDate);
+                    GoodLogger.debug("Today's date: " + today);
+                    GoodLogger.debug("Already backed up today? " + !lastBackupDate.isBefore(today));
+
+                    if (lastBackupDate.isBefore(today)) {
+                        GoodLogger.info("✓ Performing scheduled backup at " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
+                        performBackup();
+                        lastTimeBackuped = Instant.now();
+                        GoodLogger.debug("Backup completed. Next scheduled backup: tomorrow at " +
+                                scheduled.format(DateTimeFormatter.ofPattern("HH:mm")));
+                    } else {
+                        GoodLogger.debug("Already backed up today. Skipping...");
+                        // Show time until next backup
+                        LocalDateTime nextBackup = LocalDateTime.of(today.plusDays(1), scheduled);
+                        Duration untilNext = Duration.between(LocalDateTime.now(), nextBackup);
+                        GoodLogger.debug("Next backup in: " + formatDuration(untilNext.getSeconds()));
+                    }
+                } else {
+                    // Show time until next backup if within next 24 hours
+                    LocalDateTime nextBackup;
+                    if (now.isBefore(scheduled)) {
+                        nextBackup = LocalDateTime.of(LocalDate.now(), scheduled);
+                    } else {
+                        nextBackup = LocalDateTime.of(LocalDate.now().plusDays(1), scheduled);
+                    }
+                    Duration untilNext = Duration.between(LocalDateTime.now(), nextBackup);
+                    GoodLogger.debug("Next backup in: " + formatDuration(untilNext.getSeconds()));
+                }
+            }
+
+            private void handleDurationBackup() {
+                GoodLogger.debug("--- Duration Mode Check ---");
+
+                Duration interval = ConfigManager.getParsedLapse();
+
+                if (interval == null) {
+                    GoodLogger.warn("No valid backup interval! Using default: 30 minutes");
+                    interval = Duration.ofMinutes(30);
+                }
+
+                long elapsedSeconds = Duration.between(lastTimeBackuped, Instant.now()).getSeconds();
+                long intervalSeconds = interval.getSeconds();
+
+                GoodLogger.debug("Last backup: " + Instant.ofEpochSecond(lastTimeBackuped.getEpochSecond())
+                        .atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                GoodLogger.debug("Elapsed time: " + formatDuration(elapsedSeconds));
+                GoodLogger.debug("Backup interval: " + formatDuration(intervalSeconds));
+                GoodLogger.debug("Time until next backup: " +
+                        (elapsedSeconds < intervalSeconds ? formatDuration(intervalSeconds - elapsedSeconds) : "NOW"));
+
+                // Run when elapsed time >= interval
+                if (elapsedSeconds >= intervalSeconds) {
+                    GoodLogger.info("✓ Performing duration backup (elapsed: " +
+                            formatDuration(elapsedSeconds) + " / interval: " +
+                            formatDuration(intervalSeconds) + ")");
+                    performBackup();
+                    lastTimeBackuped = Instant.now();
+                    GoodLogger.debug("Backup completed. Next backup in: " + formatDuration(intervalSeconds));
+                } else {
+                    GoodLogger.debug("Not yet time. Next backup in: " +
+                            formatDuration(intervalSeconds - elapsedSeconds));
+                }
+            }
+
+            private String formatDuration(long seconds) {
+                if (seconds < 0) return "0s";
+
+                long days = seconds / 86400;
+                long hours = (seconds % 86400) / 3600;
+                long minutes = (seconds % 3600) / 60;
+                long secs = seconds % 60;
+
+                StringBuilder result = new StringBuilder();
+                if (days > 0) result.append(days).append("d ");
+                if (hours > 0) result.append(hours).append("h ");
+                if (minutes > 0) result.append(minutes).append("m ");
+                if (secs > 0 || result.length() == 0) result.append(secs).append("s");
+
+                return result.toString().trim();
+            }
+        }.runTaskTimer(getInstance(), 0L, 20L);
     }
 
     @Override
@@ -107,4 +276,10 @@ public final class NahumInventoryStuff extends JavaPlugin {
         ConfigManager.save();
     }
 
+
+    public void performBackup(){
+        GoodLogger.info("Performing backup...");
+        Map<UUID, LinkedList<ListTag>> onlineUsers = FileManager.fetchAllOnlineUserData();
+        FileManager.writeBackup(null, onlineUsers);
+    }
 }

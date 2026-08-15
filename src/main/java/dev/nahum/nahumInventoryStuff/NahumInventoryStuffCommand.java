@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
 import java.io.File;
+import java.io.ObjectInputFilter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -115,6 +116,8 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                     GoodLogger.info("Debug mode disabled by " + sender.getName());
                 }
                 break;
+            case "time":
+
             case "config":
                 if(args.length==2 && args[1].equalsIgnoreCase("see")) {
                     showAllConfigs(sender);
@@ -170,6 +173,7 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                         return true;
                 }
                 sender.sendMessage(ChatColor.GREEN + config.getName() + ":\nValue: " + config.getValue().toString() + "\n Path: " + config.getPath());
+                ConfigManager.reload();
                 return true;
 
         }

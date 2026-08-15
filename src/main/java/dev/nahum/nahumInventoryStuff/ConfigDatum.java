@@ -12,7 +12,9 @@ public class ConfigDatum {
     private ConfigDatum parent;
     private Object value;
     private static final Pattern DURATION_PATTERN =
-            Pattern.compile("(?:(\\d+)d)?\\s*(?:(\\d+)h)?\\s*(?:(\\d+)m)?");
+            Pattern.compile("(?:(\\d+(?:\\.\\d+)?)\\s*d(?:ays?)?)?\\s*" +  // Days (optional)
+                    "(?:(\\d+(?:\\.\\d+)?)\\s*h(?:ours?)?)?\\s*" +   // Hours (optional)
+                    "(?:(\\d+(?:\\.\\d+)?)\\s*m(?:in(?:utes?)?)?)?"); // Minutes (optional)
 
     public String getName() {return name;}
     public String getPath() {
@@ -100,30 +102,48 @@ public class ConfigDatum {
         return null;
     }
     public Duration getParsedLapse(String value) {
-        if((Boolean)ConfigManager.getConfig("fixedMode") == true){
+        if ((Boolean) ConfigManager.getConfig("fixedMode") == true) {
             return null;
         }
 
-        if(value == null){
+        if (value == null) {
+            if (this.value == null) return null;
             value = this.value.toString();
         }
 
-        Matcher matcher = DURATION_PATTERN.matcher(value.trim());
+        if (value == null || value.isBlank()) {
+            GoodLogger.warn("Lapse is empty and could not be parsed.");
+            return null;
+        }
 
+        String cleaned = value.toLowerCase().trim().replaceAll("\\s+", "");
+
+        // Handle simple number - treat as minutes
+        if (cleaned.matches("\\d+")) {
+            long minutes = Long.parseLong(cleaned);
+            if (minutes < 1) {
+                GoodLogger.warn("Duration must be at least 1 minute: " + value);
+                return null;
+            }
+            return Duration.ofMinutes(minutes);
+        }
+
+        Matcher matcher = DURATION_PATTERN.matcher(cleaned);
         if (matcher.matches()) {
             double days = matcher.group(1) != null ? Double.parseDouble(matcher.group(1)) : 0.0;
             double hours = matcher.group(2) != null ? Double.parseDouble(matcher.group(2)) : 0.0;
             double minutes = matcher.group(3) != null ? Double.parseDouble(matcher.group(3)) : 0.0;
 
-            double totalSeconds = 0;
-            totalSeconds += days * 24 * 60 * 60; // 1 day = 86,400 seconds
-            totalSeconds += hours * 60 * 60;     // 1 hour = 3,600 seconds
-            totalSeconds += minutes * 60;        // 1 minute = 60 seconds
+            if (days == 0 && hours == 0 && minutes == 0) {
+                GoodLogger.warn("Duration must be greater than 0: " + value);
+                return null;
+            }
 
-            return Duration.ofSeconds(Math.round(totalSeconds));
+            double totalMinutes = days * 24 * 60 + hours * 60 + minutes;
+            return Duration.ofMinutes(Math.round(totalMinutes));
         }
 
-        GoodLogger.warn("Got " + "Invalid duration format: " + value);
+        GoodLogger.warn("Invalid duration format: " + value + " (expected: 30m, 2h, 1h30m, 1d12h30m, or just a number for minutes)");
         return null;
     }
 }
