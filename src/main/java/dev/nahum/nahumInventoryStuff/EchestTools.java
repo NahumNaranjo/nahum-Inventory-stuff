@@ -164,13 +164,13 @@ public class EchestTools implements TabExecutor {
             currentInput = args[0].toLowerCase();
         }
 
-        if (args.length == 2) {
+        if(args.length == 2 || args.length == 3) {
             List<String> players = new LinkedList<>();
-            for (OfflinePlayer player : OfflinePlayerSync.getAllPlayers()) {
+            for(OfflinePlayer player : OfflinePlayerSync.getAllPlayers()){
                 players.add(player.getName());
             }
             Collections.sort(players);
-            players.removeIf(option -> !option.toLowerCase().startsWith(args[1]));
+            players.removeIf(option -> !option.toLowerCase().startsWith(args.length == 2 ? args[1] : args[2]));
             return players;
         }
 

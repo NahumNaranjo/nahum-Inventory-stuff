@@ -1,0 +1,10 @@
+backupSettings:
+  autoBackup: false
+  fixedMode: false
+  # m = minutes, h = hours, d = days; separate each argument with spaces
+  lapse: "1d 12h 30m"
+  # will be ignored if fixedMode is false
+  schedule: "13:00"
+
+debug:
+  onDebug: false

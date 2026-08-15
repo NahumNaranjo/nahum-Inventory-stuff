@@ -1,11 +1,8 @@
 package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.ListTag;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
@@ -16,6 +13,12 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class NahumInventoryStuffCommand implements TabExecutor {
+    private static String[] configNames = {
+            "all", "autoBackup", "fixedMode", "lapse", "schedule", "debug"
+    };
+    private static String[] features = {
+            "debug", "backup", "restore", "config"
+    };
     @Override
     public boolean onCommand (CommandSender sender, Command cmd, String label, String[]args){
         if(args.length==0){
@@ -111,6 +114,64 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                     sender.sendMessage(ChatColor.GREEN + "Debug mode disabled.");
                     GoodLogger.info("Debug mode disabled by " + sender.getName());
                 }
+                break;
+            case "config":
+                if(args.length==2 && args[1].equalsIgnoreCase("see")) {
+                    showAllConfigs(sender);
+                    return true;
+                }
+                if(args.length==2 || (args.length < 4 && args[1].equalsIgnoreCase("set"))) {
+                    sender.sendMessage(ChatColor.RED + "Not enough arguments!");
+                    return true;
+                }
+                if(args[1].equalsIgnoreCase("see") && args[2].equalsIgnoreCase("all")) {
+                    showAllConfigs(sender);
+                    return true;
+                }
+                ConfigDatum config = null;
+                switch(args[2]){
+                    case "debug":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setOnDebug(Boolean.parseBoolean(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("onDebug");
+
+                        break;
+                    case "autoBackup":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setAutoBackup(Boolean.parseBoolean(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("autoBackup");
+                        break;
+                    case "fixedMode":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setFixedMode(Boolean.parseBoolean(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("fixedMode");
+                        break;
+                    case "lapse":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            if(ConfigManager.checkLapseFormat(args[3])) {
+                                ConfigManager.setLapse(args[3]);
+                            }
+                        }
+                        config = ConfigManager.getConfigDatum("lapse");
+                        break;
+                    case "schedule":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            if(ConfigManager.checkScheduleFormat(args[3])) {
+                                ConfigManager.setSchedule(args[3]);
+                            }
+                        }
+                        config = ConfigManager.getConfigDatum("schedule");
+                        break;
+                    default:
+                        sender.sendMessage(ChatColor.RED + "Invalid config option!");
+                        return true;
+                }
+                sender.sendMessage(ChatColor.GREEN + config.getName() + ":\nValue: " + config.getValue().toString() + "\n Path: " + config.getPath());
+                return true;
+
         }
         return true;
     }
@@ -121,9 +182,7 @@ public class NahumInventoryStuffCommand implements TabExecutor {
         String currentInput = null;
         if(args.length == 1){
             if(sender.hasPermission("nahum.nahumstuff")){
-                completions.add("debug");
-                completions.add("backup");
-                completions.add("restore");
+                completions.addAll(Arrays.asList(features));
                 completions.removeIf(option -> !option.toLowerCase().startsWith(args[0].toLowerCase()));
                 return completions;
             }
@@ -136,8 +195,34 @@ public class NahumInventoryStuffCommand implements TabExecutor {
             if(sender.hasPermission("nahum.nahumstuff.backup")) {
                 completions.add("backup");
             }
+            if(sender.hasPermission("nahum.nahumstuff.config")) {
+                completions.add("config");
+            }
             currentInput = args[0].toLowerCase();
         }
+
+         if(args.length == 2 && args[0].equalsIgnoreCase("config")){
+             completions.add("see");
+             if(sender.hasPermission("nahum.nahumstuff.config.set")){
+                 completions.add("set");
+             }
+             currentInput = args[1].toLowerCase();
+         }
+         if(args.length == 3 && args[0].equalsIgnoreCase("config")){
+             completions.addAll(Arrays.asList(configNames));
+             currentInput = args[2].toLowerCase();
+         }
+         if(args.length == 4 && args[0].equalsIgnoreCase("config") && sender.hasPermission("nahum.nahumstuff.config.set") && !args[2].equalsIgnoreCase("all")){
+             String last = args[2];
+             String[] booleans = {"autoBackup", "fixedMode", "debug"};
+             for(String option : booleans){
+                 if(option.toLowerCase().equals(last)){
+                    completions.add("true");
+                    completions.add("false");
+                 }
+             }
+             currentInput = args[3].toLowerCase();
+         }
 
         if(currentInput == null){
             return new ArrayList<>();
@@ -146,6 +231,14 @@ public class NahumInventoryStuffCommand implements TabExecutor {
         String unmatched = currentInput;
         completions.removeIf(option -> !option.toLowerCase().startsWith(unmatched));
         return completions;
+     }
+
+     public void showAllConfigs(CommandSender sender){
+        sender.sendMessage(ChatColor.GREEN + "NahumInventoryStuff configs: ");
+        Map<String, Object>map = ConfigManager.getAllConfigs();
+        for(String k : map.keySet()){
+            sender.sendMessage(ChatColor.GREEN + "   -" + k + ": " + map.get(k).toString());
+        }
      }
 
     public String getBackupFileName(String input){

@@ -116,3 +116,9 @@ permissions:
   nahum.nahumstuff.restore:
     description: Access to the restore argument
     default: false
+  nahum.nahumstuff.config:
+    description: Access to the config argument
+    default: false
+  nahum.nahumstuff.config.set:
+    description: Allow the user to modify the config
+    default: false
