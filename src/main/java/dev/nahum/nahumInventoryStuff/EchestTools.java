@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.*;
 
@@ -42,38 +43,38 @@ public class EchestTools implements TabExecutor {
 
             // Check if target exists
             OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName, sender);
-            if(targetPlayer == null) {
+            if (targetPlayer == null) {
                 return true;
             }
 
             File playerData = FileManager.getPlayerFile(targetPlayer.getUniqueId());
 
-            if(!playerData.exists()){
+            if (!playerData.exists()) {
                 sender.sendMessage(ChatColor.RED + targetName + "'s player data does not exist!");
                 return true;
             }
-
             switch (option) {
                 case "see":
-                    if(!sender.hasPermission("nahum.enderchesttools.see") && !sender.hasPermission("nahum.enderchesttools")){
+                    if (!sender.hasPermission("nahum.enderchesttools.see") && !sender.hasPermission("nahum.enderchesttools")) {
                         sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                         return true;
                     }
                     Player viewer;
-                    if(sender instanceof Player){
+                    if (sender instanceof Player) {
                         viewer = (Player) sender;
                     } else {
                         sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
                         return true;
                     }
-                    seeEchest(targetPlayer, viewer,sender);
+                    seeEchest(targetPlayer, viewer, sender);
                     sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
                     GoodLogger.info(sender.getName() + " is looking at " +
                             targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"see\"!");
+                    String hello = "0";
                     break;
 
                 case "transfer":
-                    if(!sender.hasPermission("nahum.enderchesttools.transfer") && !sender.hasPermission("nahum.enderchesttools")){
+                    if (!sender.hasPermission("nahum.enderchesttools.transfer") && !sender.hasPermission("nahum.enderchesttools")) {
                         sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                         return true;
                     }
@@ -84,8 +85,30 @@ public class EchestTools implements TabExecutor {
 
                     String giverName = args[2];
                     OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(giverName, sender);
-                    if(giverPlayer != null){
-                        transferEchest(targetPlayer, giverPlayer, sender);
+                    if (giverPlayer != null) {
+                        transferEchest(targetPlayer, giverPlayer, sender, 1);
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Couldn't get " + giverName + "'s OfflinePlayer!");
+                        return true;
+                    }
+                    GoodLogger.info(sender.getName() + " transfered " +
+                            targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
+                    break;
+                case "swap":
+                    if (!sender.hasPermission("nahum.enderchesttools.swap") && !sender.hasPermission("nahum.enderchesttools")) {
+                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                        return true;
+                    }
+                    if (args.length < 3) {
+                        sender.sendMessage(ChatColor.RED + "Usage: /echesttools transfer <recipient> <giver>");
+                        return true;
+                    }
+
+
+                    giverName = args[2];
+                    giverPlayer = OfflinePlayerSync.getPlayer(giverName, sender);
+                    if (giverPlayer != null) {
+                        transferEchest(targetPlayer, giverPlayer, sender, 0);
                     } else {
                         sender.sendMessage(ChatColor.RED + "Couldn't get " + giverName + "'s OfflinePlayer!");
                         return true;
@@ -95,11 +118,11 @@ public class EchestTools implements TabExecutor {
                     break;
 
                 case "clear":
-                    if(!sender.hasPermission("nahum.enderchesttools.clear") && !sender.hasPermission("nahum.enderchesttools")){
+                    if (!sender.hasPermission("nahum.enderchesttools.clear") && !sender.hasPermission("nahum.enderchesttools")) {
                         sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                         return true;
                     }
-                    cleanEnderchest(targetPlayer,  sender);
+                    cleanEnderchest(targetPlayer, sender);
                     GoodLogger.info(sender.getName() + " has cleared " +
                             targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"clear\"!");
                     break;
@@ -119,8 +142,8 @@ public class EchestTools implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         List<String> completions = new ArrayList<>();
         String currentInput = null;
-        if(args.length == 1) {
-            if(sender.hasPermission("nahum.enderchesttools")){
+        if (args.length == 1) {
+            if (sender.hasPermission("nahum.enderchesttools")) {
                 completions.add("clear");
                 completions.add("swap");
                 completions.add("transfer");
@@ -128,24 +151,24 @@ public class EchestTools implements TabExecutor {
                 completions.removeIf(option -> !option.toLowerCase().startsWith(args[0].toLowerCase()));
                 return completions;
             }
-            if(sender.hasPermission("nahum.enderchesttools.see")){
+            if (sender.hasPermission("nahum.enderchesttools.see")) {
                 completions.add("see");
             }
-            if(sender.hasPermission("nahum.enderchesttools.swap")){
+            if (sender.hasPermission("nahum.enderchesttools.swap")) {
                 completions.add("swap");
             }
-            if(sender.hasPermission("nahum.enderchesttools.transfer")){
+            if (sender.hasPermission("nahum.enderchesttools.transfer")) {
                 completions.add("transfer");
             }
-            if(sender.hasPermission("nahum.enderchesttools.clear")){
+            if (sender.hasPermission("nahum.enderchesttools.clear")) {
                 completions.add("clear");
             }
             currentInput = args[0].toLowerCase();
         }
 
-        if(args.length == 2) {
+        if (args.length == 2) {
             List<String> players = new LinkedList<>();
-            for(OfflinePlayer player : OfflinePlayerSync.getAllPlayers()){
+            for (OfflinePlayer player : OfflinePlayerSync.getAllPlayers()) {
                 players.add(player.getName());
             }
             Collections.sort(players);
@@ -153,7 +176,7 @@ public class EchestTools implements TabExecutor {
             return players;
         }
 
-        if(currentInput == null) {
+        if (currentInput == null) {
             return new ArrayList<>();
         }
         String unmatched = currentInput;
@@ -161,21 +184,21 @@ public class EchestTools implements TabExecutor {
         return completions;
     }
 
-    public static boolean cleanEnderchest(OfflinePlayer player, CommandSender sender){
-        if(player.getPlayer() != null){
+    public static boolean cleanEnderchest(OfflinePlayer player, CommandSender sender) {
+        if (player.getPlayer() != null) {
             player.getPlayer().getEnderChest().clear();
-        } else  {
-            try{
+        } else {
+            try {
                 CompoundTag rootTag = FileManager.getPlayerData(player.getUniqueId());
                 File playerData = FileManager.getPlayerFile(player.getUniqueId());
 
-                if(rootTag == null){
+                if (rootTag == null) {
                     sender.sendMessage(ChatColor.RED + player.getName() + "'s player data is not a valid file!");
                     return false;
                 }
                 rootTag.put(NbtTags.getEchest(), new ListTag());
                 NbtIo.writeCompressed(rootTag, playerData.toPath());
-            } catch (Exception e){
+            } catch (Exception e) {
                 sender.sendMessage(ChatColor.RED + player.getName() + "'s player data is not a valid file!");
                 return false;
             }
@@ -184,67 +207,103 @@ public class EchestTools implements TabExecutor {
         return true;
     }
 
-    public static boolean cleanEnderchestNoSend(OfflinePlayer player){
-        if(player.getPlayer() != null){
+    public static boolean cleanEnderchestNoSend(OfflinePlayer player) {
+        if (player.getPlayer() != null) {
             player.getPlayer().getEnderChest().clear();
-        } else{
-            try{
+        } else {
+            try {
                 CompoundTag rootTag = FileManager.getPlayerData(player.getUniqueId());
                 File playerData = FileManager.getPlayerFile(player.getUniqueId());
 
-                if(rootTag == null){
+                if (rootTag == null) {
                     return false;
                 }
                 rootTag.put(NbtTags.getEchest(), new ListTag());
                 NbtIo.writeCompressed(rootTag, playerData.toPath());
-            } catch (Exception e){
+            } catch (Exception e) {
                 return false;
             }
         }
         return true;
     }
 
-    public static boolean transferEchest(OfflinePlayer recipient, OfflinePlayer giverPlayer, CommandSender sender){
+    public static boolean transferEchest(OfflinePlayer recipient, OfflinePlayer giverPlayer, CommandSender sender, int mode) {
         if (giverPlayer == null) {
             if (sender != null) {
                 sender.sendMessage(ChatColor.RED + "Couldn't get the giver player's data!");
             }
             GoodLogger.warn("Attempted to transfer an ender chest with a null giver player.");
-            return true;
+            return false;
         }
 
         String giverName = giverPlayer.getName();
 
-        if(OfflinePlayerSync.isOnline(giverPlayer) && OfflinePlayerSync.isOnline(recipient)){
-            recipient.getPlayer().getEnderChest().setContents(giverPlayer.getPlayer().getEnderChest().getContents());
-        } else{
-            try{
+        if (OfflinePlayerSync.isOnline(giverPlayer) && OfflinePlayerSync.isOnline(recipient)) {
+            if (mode == 0) {
+                ItemStack[] helper = recipient.getPlayer().getEnderChest().getContents();
+                recipient.getPlayer().getEnderChest().setContents(giverPlayer.getPlayer().getEnderChest().getContents());
+                giverPlayer.getPlayer().getEnderChest().setContents(helper);
+            } else {
+                recipient.getPlayer().getEnderChest().setContents(giverPlayer.getPlayer().getEnderChest().getContents());
+            }
+        } else if (OfflinePlayerSync.isOnline(giverPlayer) || OfflinePlayerSync.isOnline(recipient)) {
+            Player onlinePlayer;
+            if (OfflinePlayerSync.isOnline(recipient)) {
+                onlinePlayer = recipient.getPlayer();
+                CompoundTag rootTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
+                if (rootTag == null) {
+                    GoodLogger.warn("Attempted to transfer an ender chest with a null player.");
+                    return false;
+                }
+
+                ListTag giverEchest = rootTag.getListOrEmpty(NbtTags.getEchest());
+                if (mode == 0) {
+                    ListTag recipientEchestTag = Serializer.serializeToListTag(onlinePlayer.getEnderChest().getContents());
+
+                    rootTag.put(NbtTags.getEchest(), recipientEchestTag);
+                    try{
+                        NbtIo.writeCompressed(rootTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
+                    } catch (Exception e){
+                        GoodLogger.warn("Could not save the giver player's data!");
+                        sender.sendMessage(ChatColor.RED + "Could not save the giver player's data!");
+                        return false;
+                    }
+                }
+                ItemStack[] giverItemStack = Serializer.deserializeFromListTag(giverEchest, Serializer.ECHESTSIZE);
+                onlinePlayer.getEnderChest().setContents(giverItemStack);
+            } else {
+                onlinePlayer = giverPlayer.getPlayer();
+
+            }
+        } else if (!OfflinePlayerSync.isOnline(recipient) && !OfflinePlayerSync.isOnline(giverPlayer)) {
+            try {
                 File recipientData = FileManager.getPlayerFile(recipient.getUniqueId());
                 CompoundTag giverTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
                 CompoundTag rootTag = FileManager.getPlayerData(recipient.getUniqueId());
 
-                if(rootTag == null || giverTag == null){
+                if (rootTag == null || giverTag == null) {
                     GoodLogger.warn((rootTag == null ? recipient.getName() : giverName) + "'s player data is not a valid file!");
                     sender.sendMessage(ChatColor.RED + (rootTag == null ? recipient.getName() : giverName) + "'s player data is not a valid file!");
-                    return true;
+                    return false;
                 }
 
-                Optional<ListTag> list =  giverTag.getList(NbtTags.getEchest());
-                if(list.isEmpty()){
+                Optional<ListTag> list = giverTag.getList(NbtTags.getEchest());
+                if (list.isEmpty()) {
                     GoodLogger.warn(giverName + "'s Ender Chest is empty!");
                     sender.sendMessage(ChatColor.RED + giverName + "'s Ender Chest is empty!");
-                    return true;
+                    return false;
                 }
 
                 ListTag listTag = list.get();
                 rootTag.put(NbtTags.getEchest(), listTag);
                 NbtIo.writeCompressed(rootTag, recipientData.toPath());
-            } catch (Exception e){
+            } catch (Exception e) {
                 GoodLogger.error(recipient.getName() + "'s player data is not a valid file!", e);
                 sender.sendMessage(ChatColor.RED + recipient.getName() + "'s player data is not a valid file!");
-                return true;
+                return false;
             }
         }
+
 
         sender.sendMessage(ChatColor.GREEN + "Successfully transferred " + giverPlayer.getName() +
                 "'s ender chest to " + recipient.getName() + "'s!");

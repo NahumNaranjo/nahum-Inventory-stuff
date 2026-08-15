@@ -15,7 +15,7 @@ public class GoodLogger {
     public static final String RED = "\u001B[31m";
     public static final String GREEN = "\u001B[32m";
     public static final String YELLOW = "\u001B[33m";
-    public static final String BLUE = "\u001B[34m";
+    public static final String BLUE = "\u001B[36m";
     public static final String LIGHTBLUE = "\u001B[94m";
     public static final String ORANGE = "\u001B[38;5;208m";
     public static final String[] Colors = new String[]{

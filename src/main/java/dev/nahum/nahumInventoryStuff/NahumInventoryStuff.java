@@ -3,30 +3,20 @@ package dev.nahum.nahumInventoryStuff;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public final class NahumInventoryStuff extends JavaPlugin {
 
-    private final static String version = "1.2.0";
-    private final static String date = "05/August/26";
+    private final static String date = "14/August/26";
     private static NahumInventoryStuff plugin;
 
     public static boolean onDebug = false;
 
-    public static String getVVersion(){
-        return "v" + version;
-    }
-    public static String getFullVVersion(){
-        return "NahumInventoryStuff v" + version;
-    }
-    public static String getVersion(){
-        return version;
-    }
-    public static String getFullVersion(){return "NahumInventoryStuff " + version;}
     public static String getCredits(){
         return "NahumInventoryStuff :D\n" +
                 "Author: Nahum Naranjo\n" +
-                "Version: " + version + "\n" +
+                "Version: " + UpdateChecker.getCurrentVersion() + "\n" +
                 "Date of publishing: " + date;
     }
     static public NahumInventoryStuff getInstance() {return plugin;}
@@ -38,7 +28,6 @@ public final class NahumInventoryStuff extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
-        GoodLogger.success(getFullVersion() + " enabled");
         GoodLogger.info("Debug mode: " + (onDebug ? "ON" : "OFF") + " (toggle with /nahumstuff debug)");
         GoodLogger.debug("Registering command executors...");
 
@@ -51,11 +40,39 @@ public final class NahumInventoryStuff extends JavaPlugin {
 
         GoodLogger.debug("World folder: " + Bukkit.getWorlds().getFirst().getWorldFolder().getAbsolutePath());
         GoodLogger.debug("Plugin data folder: " + getDataFolder().getAbsolutePath());
+
+        CompletableFuture.supplyAsync(() -> {
+            GoodLogger.info("Looking for new versions...");
+            UpdateChecker.setUp();
+            GoodLogger.info("Fetched new versions!");
+            return UpdateChecker.getCurrentVersion().equals(UpdateChecker.getLatestVersion());
+        }).thenAccept(result -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (result != true) {
+                    GoodLogger.info(
+                            "\nA new NahumInventoryStuff version is available!\n" +
+                            "Current version: " + UpdateChecker.getCurrentVersion() + "\n" +
+                            "Newest version: " + UpdateChecker.getLatestVersion() + "\n" +
+                            "Updating is recommended ;D\n" +
+                            "Download links: \n" +
+                            UpdateChecker.getAvailableLinks()
+                    );
+                } else {
+                    GoodLogger.info("Loaded: " + UpdateChecker.getCurrentVersion());
+                    GoodLogger.debug("Latest version: " + UpdateChecker.getLatestVersion());
+                    GoodLogger.debug("Latest date: " + UpdateChecker.getLatestDate());
+                    GoodLogger.info("Newest version is already installed!");
+                }
+            });
+        }).exceptionally(ex -> {
+            GoodLogger.error(ex.getMessage());
+            return null;
+        });
     }
 
     @Override
     public void onDisable() {
-        GoodLogger.info(getFullVersion() + " disabled");
+
     }
 
 }

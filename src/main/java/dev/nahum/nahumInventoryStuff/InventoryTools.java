@@ -150,13 +150,13 @@ public class InventoryTools implements TabExecutor {
             }
             currentInput = args[0].toLowerCase();
         }
-        if(args.length == 2) {
+        if(args.length == 2 || args.length == 3) {
             List<String> players = new LinkedList<>();
             for(OfflinePlayer player : OfflinePlayerSync.getAllPlayers()){
                 players.add(player.getName());
             }
             Collections.sort(players);
-            players.removeIf(option -> !option.toLowerCase().startsWith(args[1]));
+            players.removeIf(option -> !option.toLowerCase().startsWith(args.length == 2 ? args[1] : args[2]));
             return players;
         }
         if(currentInput == null) {
@@ -221,7 +221,89 @@ public class InventoryTools implements TabExecutor {
             } else {
                 recipient.getPlayer().getInventory().setContents(giverPlayer.getPlayer().getInventory().getContents());
             }
-        } else{
+        } else if(OfflinePlayerSync.isOnline(giverPlayer) || OfflinePlayerSync.isOnline(recipient)){
+            Player onlinePlayer = null;
+            if(OfflinePlayerSync.isOnline(recipient)){
+                onlinePlayer = recipient.getPlayer();
+                CompoundTag rootTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
+                ItemStack[] helper; // lifesaver :D
+                if(rootTag == null){
+                    GoodLogger.warn("Couldn't find player data for player " + giverPlayer.getName());
+                    return false;
+                }
+
+                ItemStack[] fullGiverInv = Serializer.buildFullInventoryFromPlayerTag(rootTag);
+                ItemStack[] fullInv = onlinePlayer.getInventory().getContents();
+                if(mode == 0){
+                    rootTag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+                            getItemStackArray(fullInv, Serializer.MAIN_INVENTORY_SIZE, 0)));
+
+                    rootTag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+                            getItemStackArray(fullInv, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
+
+                    rootTag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+                            getItemStackArray(fullInv, 1, Serializer.OFFHAND_SLOT)));
+
+                    try{
+                        NbtIo.writeCompressed(rootTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
+                    } catch (Exception e){
+                        GoodLogger.warn("Couldn't save player data for player " + giverPlayer.getName());
+                        return false;
+                    }
+                }
+
+                onlinePlayer.getInventory().setContents(
+                        getItemStackArray(fullGiverInv, Serializer.MAIN_INVENTORY_SIZE, 0));
+
+                onlinePlayer.getInventory().setArmorContents(
+                        getItemStackArray(fullGiverInv, Serializer.ARMORSIZE, Serializer.ARMOR_START));
+
+                onlinePlayer.getInventory().setItemInOffHand(
+                        getItemStackArray(fullGiverInv, 1, Serializer.OFFHAND_SLOT)[0]);
+
+                return true;
+            } else {
+                onlinePlayer = giverPlayer.getPlayer();
+                ListTag tag = Serializer.serializeToListTag(onlinePlayer.getInventory().getContents());
+
+                File playerFile = FileManager.getPlayerFile(recipient.getUniqueId());
+                CompoundTag rootTag = FileManager.getPlayerData(onlinePlayer.getUniqueId());
+
+                if(rootTag == null){
+                    GoodLogger.warn("Couldn't find player data for player " + giverPlayer.getName());
+                    return false;
+                }
+
+                ItemStack[] giverInv = onlinePlayer.getInventory().getContents();
+                if(mode == 0){
+                    ItemStack[] recipientInv = Serializer.buildFullInventoryFromPlayerTag(rootTag);
+                    onlinePlayer.getInventory().setContents(
+                            getItemStackArray(recipientInv, Serializer.MAIN_INVENTORY_SIZE, 0));
+
+                    onlinePlayer.getInventory().setArmorContents(
+                            getItemStackArray(recipientInv, Serializer.ARMORSIZE, Serializer.ARMOR_START));
+
+                    onlinePlayer.getInventory().setItemInOffHand(
+                            getItemStackArray(recipientInv, 1, Serializer.OFFHAND_SLOT)[0]);
+                }
+
+                rootTag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+                        getItemStackArray(giverInv, Serializer.MAIN_INVENTORY_SIZE, 0)));
+
+                rootTag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+                        getItemStackArray(giverInv, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
+
+                rootTag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+                        getItemStackArray(giverInv, 1, Serializer.OFFHAND_SLOT)));
+
+                try{
+                    NbtIo.writeCompressed(rootTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
+                } catch (Exception e){
+                    GoodLogger.warn("Couldn't save player data for player " + giverPlayer.getName());
+                    return false;
+                }
+            }
+        } else if (!OfflinePlayerSync.isOnline(giverPlayer) && !OfflinePlayerSync.isOnline(recipient)){
             try{
                 File recipientData = FileManager.getPlayerFile(recipient.getUniqueId());
                 CompoundTag giverTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
@@ -263,6 +345,12 @@ public class InventoryTools implements TabExecutor {
         sender.sendMessage(ChatColor.GREEN + "Successfully transferred " + giverPlayer.getName() +
                 "'s inventory to " + recipient.getName() + "'s!");
         return true;
+    }
+
+    public static ItemStack[] getItemStackArray(ItemStack[] items, int size, int slot){
+        ItemStack[] stack = new ItemStack[size];
+        System.arraycopy(items, slot, stack, 0, size);
+        return stack;
     }
 
     public static boolean seeInventory(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
