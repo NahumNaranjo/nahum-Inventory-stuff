@@ -1,6 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
@@ -145,5 +146,15 @@ public class ConfigDatum {
 
         GoodLogger.warn("Invalid duration format: " + value + " (expected: 30m, 2h, 1h30m, 1d12h30m, or just a number for minutes)");
         return null;
+    }
+
+    public LocalDate getMaxAge(String lapse) {
+        if(lapse == null) {
+            lapse = this.value.toString();
+        }
+        lapse = lapse.replaceAll("d|days|day", "");
+
+        int days = Integer.parseInt(lapse);
+        return LocalDate.now().minusDays(days);
     }
 }

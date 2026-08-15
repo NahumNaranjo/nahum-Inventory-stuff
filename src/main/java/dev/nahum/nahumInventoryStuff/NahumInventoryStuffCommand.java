@@ -168,6 +168,14 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                         }
                         config = ConfigManager.getConfigDatum("schedule");
                         break;
+                    case "deleteOlderThan":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            if(ConfigManager.checkMaxAge(args[3])) {
+                                ConfigManager.setMaxAge(args[3]);
+                            }
+                        }
+                        config = ConfigManager.getConfigDatum("deleteOlderThan");
+                        break;
                     default:
                         sender.sendMessage(ChatColor.RED + "Invalid config option!");
                         return true;

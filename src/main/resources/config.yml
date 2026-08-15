@@ -5,6 +5,8 @@ backupSettings:
   lapse: "1d 12h 30m"
   # will be ignored if fixedMode is false
   schedule: "13:00"
+  # only accepts days
+  deleteOlderThan: "7d"
 
 debug:
   onDebug: false

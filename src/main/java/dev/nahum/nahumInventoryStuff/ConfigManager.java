@@ -2,6 +2,7 @@ package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -13,11 +14,12 @@ public class ConfigManager {
     private static ConfigDatum fixedMode = new ConfigDatum("fixedMode", backup);
     private static ConfigDatum lapse = new ConfigDatum("lapse", backup);
     private static ConfigDatum schedule = new ConfigDatum("schedule", backup);
+    private static ConfigDatum deleteOlderThan = new ConfigDatum("deleteOlderThan",  backup);
     private static ConfigDatum debug = new ConfigDatum("debug");
     private static ConfigDatum onDebug = new ConfigDatum("onDebug", debug);
 
     private static ConfigDatum[] data = {
-            autoBackup, fixedMode, lapse, schedule,
+            autoBackup, fixedMode, lapse, schedule, deleteOlderThan,
             onDebug
     };
 
@@ -27,6 +29,18 @@ public class ConfigManager {
 
     public static String getLapse() {
         return lapse.getValue() != null ? lapse.getValue().toString() : null;
+    }
+    public static LocalDate getMaxAge(String lapse) {
+        return deleteOlderThan.getMaxAge(lapse);
+    }
+
+    public static boolean checkMaxAge(String lapse) {
+        try{
+            deleteOlderThan.getMaxAge(lapse);
+        } catch(Exception e){
+            return false;
+        }
+        return true;
     }
 
     public static Duration getParsedLapse() {
@@ -47,6 +61,10 @@ public class ConfigManager {
 
     public static void setAutoBackup(boolean autoBackup) {
         ConfigManager.autoBackup.setValue(autoBackup);
+    }
+
+    public static void setMaxAge(String lapse) {
+        deleteOlderThan.setValue(lapse);
     }
 
     public static void setFixedMode(boolean fixedMode) {
@@ -73,14 +91,11 @@ public class ConfigManager {
         return backup.getParsedSchedule(schedule) != null;
     }
 
-    // FIXED: Actually sets the correct config
     public static void setConfig(String name, Object value) {
         for (ConfigDatum d : data) {
             if (d.getName().equals(name)) {
-                // Update the value in the ConfigDatum
                 d.setValue(value);
 
-                // Save to config file
                 switch (name) {
                     case "autoBackup":
                         config.set(autoBackup.getPath(), value);

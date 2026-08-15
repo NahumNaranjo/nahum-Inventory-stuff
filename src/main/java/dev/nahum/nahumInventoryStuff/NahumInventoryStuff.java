@@ -8,12 +8,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.ObjectInputFilter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 public final class NahumInventoryStuff extends JavaPlugin {
 
@@ -163,6 +169,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
             private void handleFixedBackup() {
                 GoodLogger.debug("--- Fixed Mode Check ---");
 
+                deleteOldBackups();
                 LocalTime now = LocalTime.now();
                 LocalTime scheduled = ConfigManager.getParsedSchedule();
 
@@ -238,17 +245,42 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 GoodLogger.debug("Time until next backup: " +
                         (elapsedSeconds < intervalSeconds ? formatDuration(intervalSeconds - elapsedSeconds) : "NOW"));
 
-                // Run when elapsed time >= interval
                 if (elapsedSeconds >= intervalSeconds) {
                     GoodLogger.info("✓ Performing duration backup (elapsed: " +
                             formatDuration(elapsedSeconds) + " / interval: " +
                             formatDuration(intervalSeconds) + ")");
+                    deleteOldBackups();
                     performBackup();
                     lastTimeBackuped = Instant.now();
                     GoodLogger.debug("Backup completed. Next backup in: " + formatDuration(intervalSeconds));
                 } else {
                     GoodLogger.debug("Not yet time. Next backup in: " +
                             formatDuration(intervalSeconds - elapsedSeconds));
+                }
+            }
+
+            private void deleteOldBackups() {
+                File folder = FileManager.getBackupFolder();
+                LocalDate maxAge = ConfigManager.getMaxAge(null);
+                try (Stream<Path> stream = Files.list(folder.toPath())) {
+                    stream.filter(Files::isRegularFile)
+                            .forEach(path -> {
+                                try {
+                                    BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+
+                                    LocalDate age = attr.creationTime().toInstant()
+                                            .atZone(ZoneId.systemDefault())
+                                            .toLocalDate();
+
+                                    if(age.isBefore(maxAge)) {
+                                        Files.deleteIfExists(path);
+                                    }
+                                } catch (IOException e) {
+                                    System.err.println("Could not read attributes for: " + path.getFileName());
+                                }
+                            });
+                } catch (IOException e) {
+                    System.err.println("Error reading directory: " + e.getMessage());
                 }
             }
 
