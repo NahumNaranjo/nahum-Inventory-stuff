@@ -33,6 +33,49 @@ public class FileManager {
         return new File(getPlayerFolder(), uuid.toString() + ".dat");
     }
 
+    static public File getSnapshotFolder(){
+        File f = new File(getDataFolder(), "snapshots");
+        return createFolder(getDataFolder().toString(), "snapshots");
+    }
+
+    static public File getBufferFolder(){
+        return createFolder(getSnapshotFolder().toString(), "buffers");
+    }
+
+    static public File getPlayersSnapshotFolder(){
+        return createFolder(getSnapshotFolder().toString(),  "players");
+    }
+
+    static public File getLonePlayerSnapshotFolder(Object player){
+        return createFolder(getPlayersSnapshotFolder().toString(), DataParser.getUuidFromObject(player).toString());
+    }
+    static public File getPlayerDeathsFolder(Object player){
+        return createFolder(getLonePlayerSnapshotFolder(player).toString(), "deaths");
+    }
+    static public File getPlayerJoinsFolder(Object player){
+        return createFolder(getPlayersSnapshotFolder().toString(), "joins");
+    }
+    static public File getPlayerLeavesFolder(Object player){
+        return createFolder(getPlayersSnapshotFolder().toString(), "leaves");
+    }
+    static public File getPlayerForcedSaves(Object player){
+        return createFolder(getPlayersSnapshotFolder().toString(), "ForcedSaves");
+    }
+
+    static public File createFolder(String parent, String subfolder){
+        File f = new File(parent, subfolder);
+        if(!f.exists()){
+            if(f.mkdirs()){
+                return f;
+            } else {
+                GoodLogger.warn("Failed to create " + subfolder + " folder!");
+                return null;
+            }
+        } else{
+            return f;
+        }
+    }
+
     static public CompoundTag getPlayerData(UUID uuid){
         File file = getPlayerFile(uuid);
         try{
@@ -413,4 +456,20 @@ public class FileManager {
     public static ItemStack[] loadInventory(Object giver){
         return Serializer.buildFullInventoryFromPlayerTag(getPlayerData(DataParser.getUuidFromObject(giver)));
     }
+
+
+    public static boolean saveDeathSnapshot(){
+
+        return true;
+    }
+    public static boolean saveJoinSnapshot(){
+        return true;
+    }
+    public static boolean saveLeaveSnapshot(){
+        return true;
+    }
+    public static boolean saveForcedSnapshot(){
+        return true;
+    }
+
 }

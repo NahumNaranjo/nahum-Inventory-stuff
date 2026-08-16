@@ -7,10 +7,12 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.codemc.io/repository/maven-public/")
 }
 
 dependencies {
     paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.21.11-R0.1-SNAPSHOT")
+    implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
 java {
@@ -18,6 +20,7 @@ java {
 }
 
 tasks {
+
     assemble {
         dependsOn(reobfJar)
     }

@@ -6,6 +6,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bstats.bukkit.Metrics;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +83,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
         plugin = this;
         getInstance().saveDefaultConfig();
         ConfigManager.load();
+
+        int pluginBStatsID = 33407;
+        Metrics metrics = new Metrics(getInstance(), pluginBStatsID);
 
         if(ConfigManager.getConfig("onDebug") ==  null){
             onDebug = false;
