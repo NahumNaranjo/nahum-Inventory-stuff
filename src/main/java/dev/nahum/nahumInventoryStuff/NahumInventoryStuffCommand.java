@@ -135,44 +135,38 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                 switch(args[2]){
                     case "debug":
                         if(args[1].equalsIgnoreCase("set")) {
-                            ConfigManager.setOnDebug(Boolean.parseBoolean(args[3]));
+                            ConfigManager.setConfig("onDebug", Boolean.parseBoolean(args[3]));
                         }
                         config = ConfigManager.getConfigDatum("onDebug");
 
                         break;
                     case "autoBackup":
                         if(args[1].equalsIgnoreCase("set")) {
-                            ConfigManager.setAutoBackup(Boolean.parseBoolean(args[3]));
+                            ConfigManager.setConfig("autoBackup", Boolean.parseBoolean(args[3]));
                         }
                         config = ConfigManager.getConfigDatum("autoBackup");
                         break;
                     case "fixedMode":
                         if(args[1].equalsIgnoreCase("set")) {
-                            ConfigManager.setFixedMode(Boolean.parseBoolean(args[3]));
+                            ConfigManager.setConfig("fixedMode", Boolean.parseBoolean(args[3]));
                         }
                         config = ConfigManager.getConfigDatum("fixedMode");
                         break;
                     case "lapse":
                         if(args[1].equalsIgnoreCase("set")) {
-                            if(ConfigManager.checkLapseFormat(args[3])) {
-                                ConfigManager.setLapse(args[3]);
-                            }
+                            ConfigManager.setConfig("lapse", args[3]);
                         }
                         config = ConfigManager.getConfigDatum("lapse");
                         break;
                     case "schedule":
                         if(args[1].equalsIgnoreCase("set")) {
-                            if(ConfigManager.checkScheduleFormat(args[3])) {
-                                ConfigManager.setSchedule(args[3]);
-                            }
+                            ConfigManager.setConfig("schedule", args[3]);
                         }
                         config = ConfigManager.getConfigDatum("schedule");
                         break;
                     case "deleteOlderThan":
                         if(args[1].equalsIgnoreCase("set")) {
-                            if(ConfigManager.checkMaxAge(args[3])) {
-                                ConfigManager.setMaxAge(args[3]);
-                            }
+                            ConfigManager.setConfig("deleteOlderThan", args[3]);
                         }
                         config = ConfigManager.getConfigDatum("deleteOlderThan");
                         break;

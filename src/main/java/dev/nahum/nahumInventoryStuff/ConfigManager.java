@@ -52,7 +52,7 @@ public class ConfigManager {
     }
 
     public static boolean isFixedMode() {
-        return fixedMode.getValue() != null && (Boolean) fixedMode.getValue();
+        return fixedMode.getValue() != null ? (Boolean)fixedMode.getValue() : false;
     }
 
     public static boolean hasAutoBackup() {
@@ -122,6 +122,14 @@ public class ConfigManager {
                             return;
                         }
                         break;
+                    case "deleteOlderThan":
+                        if(checkLapseFormat(value.toString())) {
+                            config.set(deleteOlderThan.getPath(), value);
+                        } else {
+                            GoodLogger.warn("Invalid format for deleteOlderThan: " + value);
+                            return;
+                        }
+                        break;
                     default:
                         GoodLogger.warn("Unknown config key: " + name);
                         return;
@@ -138,6 +146,8 @@ public class ConfigManager {
         setFixedMode(config.getBoolean(fixedMode.getPath(), false));
         setLapse(config.getString(lapse.getPath(), "30m"));
         setSchedule(config.getString(schedule.getPath(), "03:00"));
+        setMaxAge(config.getString(deleteOlderThan.getPath(), "7d"));
+
         setOnDebug(config.getBoolean(onDebug.getPath(), false));
     }
 

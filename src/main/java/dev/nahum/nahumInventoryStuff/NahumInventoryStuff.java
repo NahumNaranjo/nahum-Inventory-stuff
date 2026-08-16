@@ -273,8 +273,17 @@ public final class NahumInventoryStuff extends JavaPlugin {
                                             .toLocalDate();
 
                                     if(age.isBefore(maxAge)) {
+                                        GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
                                         Files.deleteIfExists(path);
                                     }
+                                    if(path.toFile().exists()) {
+                                        LocalDate ageFromName = getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
+                                        if(ageFromName.isBefore(maxAge)) {
+                                            GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
+                                            Files.deleteIfExists(path);
+                                        }
+                                    }
+                                    GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
                                 } catch (IOException e) {
                                     System.err.println("Could not read attributes for: " + path.getFileName());
                                 }
@@ -282,6 +291,12 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 } catch (IOException e) {
                     System.err.println("Error reading directory: " + e.getMessage());
                 }
+            }
+
+            private LocalDate getAgeFromName(String fileName) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+                LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
+                return dateTime.toLocalDate();
             }
 
             private String formatDuration(long seconds) {
