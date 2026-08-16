@@ -1,5 +1,6 @@
 backupSettings:
   autoBackup: false
+  autoDelete: false
   fixedMode: false
   # m = minutes, h = hours, d = days; separate each argument with spaces
   lapse: "1d 12h 30m"
@@ -7,6 +8,17 @@ backupSettings:
   schedule: "13:00"
   # only accepts days
   deleteOlderThan: "7d"
+  snapshotSettings:
+    playerSnapshots:
+      maxDeathSnapshots: 10
+      maxJoinSnapshots: 5
+      maxLeaveSnapshots: 5
+      maxChangeSnapshots: 5
+      maxForcedSnapshots: 0 #leave any of these in 0 to make an infinite ammount
+
+    adminSnapshots:
+      maxPlayers: 10 # maximum of different players to store data from
+      maxSnapshots: 10 # max snapshots from each player to store
 
 debug:
   onDebug: false

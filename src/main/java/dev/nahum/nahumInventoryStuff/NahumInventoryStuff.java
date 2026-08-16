@@ -2,19 +2,14 @@ package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.ListTag;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bstats.bukkit.Metrics;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputFilter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -173,7 +168,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
             private void handleFixedBackup() {
                 GoodLogger.debug("--- Fixed Mode Check ---");
 
-                deleteOldBackups();
+                if(ConfigManager.hasAutoDelete()) {
+                    deleteOldBackups(FileManager.getBackupFolder());
+                }
                 LocalTime now = LocalTime.now();
                 LocalTime scheduled = ConfigManager.getParsedSchedule();
 
@@ -204,6 +201,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
 
                     if (lastBackupDate.isBefore(today)) {
                         GoodLogger.info("✓ Performing scheduled backup at " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
+                        if(ConfigManager.hasAutoDelete()) {
+                            deleteOldBackups(FileManager.getBackupFolder());
+                        }
                         performBackup();
                         lastTimeBackuped = Instant.now();
                         GoodLogger.debug("Backup completed. Next scheduled backup: tomorrow at " +
@@ -253,7 +253,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
                     GoodLogger.info("✓ Performing duration backup (elapsed: " +
                             formatDuration(elapsedSeconds) + " / interval: " +
                             formatDuration(intervalSeconds) + ")");
-                    deleteOldBackups();
+                    if(ConfigManager.hasAutoDelete()){
+                        deleteOldBackups(FileManager.getBackupFolder());
+                    }
                     performBackup();
                     lastTimeBackuped = Instant.now();
                     GoodLogger.debug("Backup completed. Next backup in: " + formatDuration(intervalSeconds));
@@ -261,46 +263,6 @@ public final class NahumInventoryStuff extends JavaPlugin {
                     GoodLogger.debug("Not yet time. Next backup in: " +
                             formatDuration(intervalSeconds - elapsedSeconds));
                 }
-            }
-
-            private void deleteOldBackups() {
-                File folder = FileManager.getBackupFolder();
-                LocalDate maxAge = ConfigManager.getMaxAge(null);
-                try (Stream<Path> stream = Files.list(folder.toPath())) {
-                    stream.filter(Files::isRegularFile)
-                            .forEach(path -> {
-                                try {
-                                    BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
-
-                                    LocalDate age = attr.creationTime().toInstant()
-                                            .atZone(ZoneId.systemDefault())
-                                            .toLocalDate();
-
-                                    if(age.isBefore(maxAge)) {
-                                        GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
-                                        Files.deleteIfExists(path);
-                                    }
-                                    if(path.toFile().exists()) {
-                                        LocalDate ageFromName = getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
-                                        if(ageFromName.isBefore(maxAge)) {
-                                            GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
-                                            Files.deleteIfExists(path);
-                                        }
-                                    }
-                                    GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
-                                } catch (IOException e) {
-                                    System.err.println("Could not read attributes for: " + path.getFileName());
-                                }
-                            });
-                } catch (IOException e) {
-                    System.err.println("Error reading directory: " + e.getMessage());
-                }
-            }
-
-            private LocalDate getAgeFromName(String fileName) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-                LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
-                return dateTime.toLocalDate();
             }
 
             private String formatDuration(long seconds) {
@@ -320,6 +282,39 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 return result.toString().trim();
             }
         }.runTaskTimer(getInstance(), 0L, 20L);
+    }
+
+    public static void deleteOldBackups(File folder) {
+        LocalDate maxAge = ConfigManager.getMaxAge(null);
+        try (Stream<Path> stream = Files.list(folder.toPath())) {
+            stream.filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+
+                            LocalDate age = attr.creationTime().toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+
+                            if(age.isBefore(maxAge)) {
+                                GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
+                                Files.deleteIfExists(path);
+                            }
+                            if(path.toFile().exists()) {
+                                LocalDate ageFromName = FileManager.getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
+                                if(ageFromName.isBefore(maxAge)) {
+                                    GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
+                                    Files.deleteIfExists(path);
+                                }
+                            }
+                            GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
+                        } catch (IOException e) {
+                            System.err.println("Could not read attributes for: " + path.getFileName());
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("Error reading directory: " + e.getMessage());
+        }
     }
 
     @Override

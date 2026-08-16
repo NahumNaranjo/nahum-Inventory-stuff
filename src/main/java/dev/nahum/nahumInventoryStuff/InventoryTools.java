@@ -16,6 +16,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class InventoryTools implements TabExecutor {
@@ -186,6 +187,28 @@ public class InventoryTools implements TabExecutor {
 
     public static boolean cleanInventory(OfflinePlayer player, CommandSender sender){
         if(player.getPlayer() != null){
+            ItemStack[] contents = player.getPlayer().getInventory().getContents();
+            if(sender instanceof Player senderPlayer){
+                FileManager.performAdminBufferSave(
+                        senderPlayer,
+                        player,
+                        contents,
+                        null,
+                        senderPlayer.getName() + " cleared " + player.getName() + "'s inventory!",
+                        "maxSnapshot",
+                        null
+                );
+            } else {
+                FileManager.performAdminBufferSave(
+                        "console",
+                        player,
+                        contents,
+                        null,
+                        "Console cleared " + player.getName() + "'s inventory!",
+                        "maxSnapshot",
+                        null
+                );
+            }
             player.getPlayer().getInventory().clear();
         } else{
             try{
@@ -195,6 +218,29 @@ public class InventoryTools implements TabExecutor {
                 if(rootTag == null){
                     sender.sendMessage(ChatColor.RED + player.getName() + "'s player data is not a valid file!");
                     return false;
+                }
+
+                ListTag oldInv = rootTag.getListOrEmpty(NbtTags.getInventory());
+                if(sender instanceof Player senderPlayer){
+                    FileManager.performAdminBufferSave(
+                            senderPlayer,
+                            player,
+                            Serializer.deserializeFromListTag(oldInv, Serializer.MAIN_INVENTORY_SIZE),
+                            null,
+                            senderPlayer.getName() + " cleared " + player.getName() + "'s inventory!",
+                            "maxSnapshot",
+                            null
+                    );
+                } else {
+                    FileManager.performAdminBufferSave(
+                            "console",
+                            player,
+                            Serializer.deserializeFromListTag(oldInv, Serializer.MAIN_INVENTORY_SIZE),
+                            null,
+                            "Console cleared " + player.getName() + "'s inventory!",
+                            "maxSnapshot",
+                            null
+                    );
                 }
                 rootTag.put(NbtTags.getInventory(), new ListTag());
                 NbtIo.writeCompressed(rootTag, playerData.toPath());
@@ -233,6 +279,7 @@ public class InventoryTools implements TabExecutor {
         if(OfflinePlayerSync.isOnline(giverPlayer) && OfflinePlayerSync.isOnline(recipient)){
             if(mode == 0){
                 ItemStack[] helper = recipient.getPlayer().getInventory().getContents();
+                saveSwapData(sender, recipient.getPlayer(), giverPlayer);
                 recipient.getPlayer().getInventory().setContents(giverPlayer.getPlayer().getInventory().getContents());
                 giverPlayer.getPlayer().getInventory().setContents(helper);
             } else {
@@ -242,24 +289,29 @@ public class InventoryTools implements TabExecutor {
             Player onlinePlayer = null;
             if(OfflinePlayerSync.isOnline(recipient)){
                 onlinePlayer = recipient.getPlayer();
-                FileManager.saveInventory(FileManager.loadInventory(giverPlayer), DataParser.getUuidFromObject(onlinePlayer));
+                ItemStack[] giverInv = FileManager.loadInventory(giverPlayer);
                 if(mode == 0) {
+                    saveSwapData(sender, onlinePlayer, giverPlayer);
                     FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(giverPlayer));
                 }
+                saveTransferData(sender, recipient, recipient.getPlayer().getInventory().getContents(), giverName);
+                FileManager.saveInventory(giverInv, DataParser.getUuidFromObject(onlinePlayer));
             } else {
                 onlinePlayer = giverPlayer.getPlayer();
                 if(mode == 0){
+                    saveSwapData(sender, onlinePlayer, recipient);
                     FileManager.pasteInventory(FileManager.loadInventory(recipient), onlinePlayer);
                 }
+                saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(FileManager.getPlayerData(recipient.getUniqueId())), giverName);
                 FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(recipient));
             }
         } else if (!OfflinePlayerSync.isOnline(giverPlayer) && !OfflinePlayerSync.isOnline(recipient)){
             try{
                 File recipientData = FileManager.getPlayerFile(recipient.getUniqueId());
                 CompoundTag giverTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
-                CompoundTag rootTag = FileManager.getPlayerData(recipient.getUniqueId());
+                CompoundTag recipientTag = FileManager.getPlayerData(recipient.getUniqueId());
 
-                if(rootTag == null){
+                if(recipientTag == null){
                     GoodLogger.warn(recipient.getName() + "'s player data is not a valid file!");
                     return false;
                 }
@@ -277,15 +329,16 @@ public class InventoryTools implements TabExecutor {
 
                 ListTag listTag = list.get();
                 if(mode == 0){
-                    ListTag newListTag = rootTag.getListOrEmpty(NbtTags.getInventory());
+                    ListTag newListTag = recipientTag.getListOrEmpty(NbtTags.getInventory());
                     if(!newListTag.isEmpty()){
                         giverTag.put(NbtTags.getInventory(), newListTag);
                         NbtIo.writeCompressed(giverTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
                     }
+                    saveSwapData(sender, recipient, giverPlayer);
                 }
-
-                rootTag.put(NbtTags.getInventory(), listTag);
-                NbtIo.writeCompressed(rootTag, recipientData.toPath());
+                saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverName);
+                recipientTag.put(NbtTags.getInventory(), listTag);
+                NbtIo.writeCompressed(recipientTag, recipientData.toPath());
             } catch (Exception e){
                 GoodLogger.error(recipient.getName() + "'s player data is not a valid file!");
                 return false;
@@ -355,6 +408,9 @@ public class InventoryTools implements TabExecutor {
     public static boolean editInventory(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
         Inventory inventory = Bukkit.createInventory(null, InventoryType.PLAYER, ChatColor.BOLD + targetPlayer.getName() + "'s Inventory");
         if(targetPlayer.getPlayer() != null){
+            inventory = targetPlayer.getPlayer().getInventory();
+            saveEditData(viewer, targetPlayer, inventory);
+            GoodLogger.debug(targetPlayer.getName() + " is editing " + targetPlayer.getName() + "'s inventory, snapshoted!");
             viewer.openInventory(targetPlayer.getPlayer().getInventory());
         } else{
             try{
@@ -396,6 +452,8 @@ public class InventoryTools implements TabExecutor {
                         }
                     }
                 }
+
+                saveEditData(viewer, targetPlayer, inventory);
                 viewer.openInventory(inventory);
             } catch (Exception e){
                 sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
@@ -404,6 +462,56 @@ public class InventoryTools implements TabExecutor {
         return true;
     }
 
+
+    public static void saveEditData(OfflinePlayer viewer, OfflinePlayer targetPlayer, Inventory inventory){
+        FileManager.performAdminBufferSave(
+                viewer,
+                targetPlayer,
+                inventory.getContents(),
+                null,
+                viewer.getName() + " edited " + targetPlayer.getName() + "'s inventory!",
+                null,
+                null
+        );
+    }
+    public static void saveTransferData(CommandSender sender, OfflinePlayer targetPlayer, ItemStack[] inventory, String giverName){
+        FileManager.performAdminBufferSave(
+                ((OfflinePlayer)sender) != null ? (OfflinePlayer)sender : null,
+                targetPlayer,
+                inventory,
+                null,
+                ((Player)sender) != null ? ((Player)sender).getName() :
+                        "Console" + " transferred " + giverName + "'s inventory to " + targetPlayer.getName() + "!",
+                null,
+                null
+        );
+    }
+    public static void saveSwapData(CommandSender sender, OfflinePlayer player1, OfflinePlayer player2){
+        String path;
+        String path2;
+        path = FileManager.performAdminBufferSave(
+                ((OfflinePlayer)sender) != null ? (OfflinePlayer)sender : null,
+                player2,
+                Serializer.buildFullInventoryFromPlayerTag(FileManager.getPlayerData(player2.getUniqueId())),
+                null,
+                ((OfflinePlayer)sender) != null ? ((OfflinePlayer)sender).getName() : "Console" + " swapped " + player1.getName() + "'s inventory with " + player2.getName() + "!",
+                null,
+                null
+        );
+        path2 = FileManager.performAdminBufferSave(
+                ((OfflinePlayer)sender) != null ? (OfflinePlayer)sender : null,
+                player1,
+                Serializer.buildFullInventoryFromPlayerTag(FileManager.getPlayerData(player1.getUniqueId())),
+                null,
+                ((OfflinePlayer)sender) != null ? ((OfflinePlayer)sender).getName() :
+                        "Console" + " swapped " + player1.getName() + "'s inventory with " + player2.getName() + "!"
+                ,
+                null,
+                path
+        );
+        if(path != null)
+            FileManager.updateSnapshot(Paths.get(path), sender, player2, path2, "linkedTo");
+    }
     public static boolean consoleSee(){
         return true;
     }

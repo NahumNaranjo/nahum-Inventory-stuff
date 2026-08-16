@@ -61,6 +61,12 @@ public class Serializer {
         return serializeToListTag(itemStack, "unknown");
     }
 
+    public static CompoundTag serializeString(String message, String key){
+        CompoundTag tag = new CompoundTag();
+        tag.putString(key, message);
+        return tag;
+    }
+
     private static ListTag serializeToListTag(ItemStack[] itemStack, String contextName){
         ListTag listTag = new ListTag();
 

@@ -13,7 +13,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -41,6 +46,17 @@ public class FileManager {
     static public File getBufferFolder(){
         return createFolder(getSnapshotFolder().toString(), "buffers");
     }
+    static public File getAdminFolder(Object player){
+        if(player instanceof String){
+            return createFolder(getBufferFolder().toString(), "console");
+        } else if(player == null){
+            return createFolder(getBufferFolder().toString(), "console");
+        } else {
+            return createFolder(getBufferFolder().toString(), DataParser.getUuidFromObject(player).toString());
+        }
+
+    }
+    static public File getPlayerBuffer(Object admin, Object player) { return createFolder(getAdminFolder(admin).toString(), DataParser.getUuidFromObject(player).toString()); }
 
     static public File getPlayersSnapshotFolder(){
         return createFolder(getSnapshotFolder().toString(),  "players");
@@ -58,7 +74,7 @@ public class FileManager {
     static public File getPlayerLeavesFolder(Object player){
         return createFolder(getPlayersSnapshotFolder().toString(), "leaves");
     }
-    static public File getPlayerForcedSaves(Object player){
+    static public File getPlayerForcedFolder(Object player){
         return createFolder(getPlayersSnapshotFolder().toString(), "ForcedSaves");
     }
 
@@ -76,8 +92,27 @@ public class FileManager {
         }
     }
 
+    private static boolean deleteFolder(File directory) {
+        File[] contents = directory.listFiles();
+        if (contents != null) {
+            for (File file : contents) {
+                deleteFolder(file);
+            }
+        }
+        return directory.delete();
+    }
+
     static public CompoundTag getPlayerData(UUID uuid){
         File file = getPlayerFile(uuid);
+        try{
+            return NbtIo.readCompressed(file.toPath(), ACCOUNTER);
+        } catch (IOException e) {
+            GoodLogger.error("Failed to read player data!\nError: " + e);
+            return null;
+        }
+    }
+
+    static public CompoundTag getPlayerSnapshotData(File file){
         try{
             return NbtIo.readCompressed(file.toPath(), ACCOUNTER);
         } catch (IOException e) {
@@ -425,19 +460,64 @@ public class FileManager {
             return;
         }
 
-        tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
-                DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0)));
+        if(contents != null){
+            tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0)));
 
-        tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
-                DataParser.getItemStackArray(contents, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
+            tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(contents, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
 
-        tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
-                DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)));
+            tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)));
+        }
 
         try{
             NbtIo.writeCompressed(tag, file.toPath());
         } catch(IOException e){
             GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
+        }
+    }
+
+    public static void saveSnapshot(ItemStack[] inventory, ItemStack[] echest,UUID uuid, File file){
+        CompoundTag tag = getPlayerSnapshotData(file);
+
+        if(tag == null){
+            GoodLogger.warn("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + "!");
+            return;
+        }
+
+        if(inventory != null){
+            tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(inventory, Serializer.MAIN_INVENTORY_SIZE, 0)));
+
+            tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(inventory, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
+
+            tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+                    DataParser.getItemStackArray(inventory, 1, Serializer.OFFHAND_SLOT)));
+        }
+
+        if(echest != null){
+            tag.put(NbtTags.getEchest(), Serializer.serializeToListTag(echest));
+        }
+
+        try{
+            NbtIo.writeCompressed(tag, file.toPath());
+        } catch(IOException e){
+            GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
+        }
+    }
+    public static boolean writeString(File snapshot, UUID uuid, String message, String key){
+        CompoundTag tag = getPlayerSnapshotData(snapshot);
+        ListTag listTag = new ListTag();
+        listTag.add(Serializer.serializeString(message, key));
+
+        try{
+            NbtIo.writeCompressed(tag, snapshot.toPath());
+            return true;
+        } catch(IOException e){
+            GoodLogger.error("Failed to save player data for " + uuid.toString() + ": \n" + e.getMessage());
+            return false;
         }
     }
 
@@ -457,19 +537,210 @@ public class FileManager {
         return Serializer.buildFullInventoryFromPlayerTag(getPlayerData(DataParser.getUuidFromObject(giver)));
     }
 
-
-    public static boolean saveDeathSnapshot(){
-
-        return true;
+    public static LocalDate getAgeFromName(String fileName) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
+        return dateTime.toLocalDate();
     }
-    public static boolean saveJoinSnapshot(){
-        return true;
-    }
-    public static boolean saveLeaveSnapshot(){
-        return true;
-    }
-    public static boolean saveForcedSnapshot(){
-        return true;
+    public static LocalDateTime getDateTimeFromName(String fileName) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
+        return dateTime;
     }
 
+    public static void deleteOldSnapshots(File folder, String name) {
+        Integer max = (Integer) ConfigManager.getConfig(name);
+        if (max == null) max = 10;
+
+        List<File> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(folder.toPath())) {
+            stream.filter(Files::isRegularFile)
+                    .forEach(path -> files.add(path.toFile()));
+        } catch (IOException e) {
+            System.err.println("Error reading directory: " + e.getMessage());
+            return;
+        }
+
+        if (max == 0 || files.size() <= max) return; // Nothing to delete
+
+        Map<LocalDateTime, File> map = new HashMap<>();
+        List<LocalDateTime> dates = new ArrayList<>();
+
+        for (File file : files) {
+            LocalDateTime date = getDateTimeFromName(file.getName());
+            if (date != null) {
+                map.put(date, file);
+                dates.add(date);
+            }
+        }
+
+        dates.sort(Comparator.naturalOrder());
+        int toDelete = files.size() - max;
+        int deleted = 0;
+
+        for (LocalDateTime date : dates) {
+            if (deleted >= toDelete) break;
+
+            File file = map.get(date);
+            if (file != null && file.delete()) {
+                GoodLogger.debug("Deleted old snapshot: " + file.getAbsolutePath());
+                deleted++;
+            } else if (file != null) {
+                GoodLogger.debug("Failed to delete: " + file.getAbsolutePath());
+            }
+        }
+    }
+
+    public static void deleteOldPlayers(File folder, String name) {
+        Integer max = (Integer) ConfigManager.getConfig(name);
+        if (max == null) max = 10;
+
+        if (max == 0) return; // Keep all
+
+        List<File> playerDirs = new ArrayList<>();
+        Map<FileTime, File> timeToFile = new HashMap<>();
+        List<FileTime> creationTimes = new ArrayList<>();
+
+        // Read all player directories and their creation times
+        try (Stream<Path> stream = Files.list(folder.toPath())) {
+            stream.filter(Files::isDirectory)
+                    .forEach(path -> {
+                        try {
+                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+                            FileTime creationTime = attr.creationTime();
+                            File file = path.toFile();
+
+                            playerDirs.add(file);
+                            timeToFile.put(creationTime, file);
+                            creationTimes.add(creationTime);
+                        } catch (IOException e) {
+                            GoodLogger.warn("Could not read attributes for: " + path.getFileName());
+                        }
+                    });
+        } catch (IOException e) {
+            GoodLogger.warn("Error reading directory: " + e.getMessage());
+            return;
+        }
+        if (playerDirs.size() <= max) return;
+        creationTimes.sort(FileTime::compareTo);
+        int toDelete = playerDirs.size() - max;
+        int deleted = 0;
+
+        for (FileTime time : creationTimes) {
+            if (deleted >= toDelete) break;
+
+            File playerDir = timeToFile.get(time);
+            if (playerDir == null) continue;
+
+            // Delete directory recursively
+            if (deleteFolder(playerDir)) {
+                GoodLogger.debug("Deleted old player data: " + playerDir.getAbsolutePath());
+                deleted++;
+            } else {
+                GoodLogger.warn("Failed to delete: " + playerDir.getAbsolutePath());
+            }
+        }
+    }
+
+    public static boolean writeTimeAndMessage(File snapshot, UUID uuid, String message, String key){
+        CompoundTag tag = getPlayerSnapshotData(snapshot);
+        ListTag listTag = new ListTag();
+        listTag.add(Serializer.serializeString(message, key));
+        listTag.add(Serializer.serializeString(Instant.now().toString(), "time"));
+
+        try{
+            NbtIo.writeCompressed(tag, snapshot.toPath());
+            return true;
+        } catch(IOException e){
+            GoodLogger.error("Failed to save player data for " + uuid.toString() + ": \n" + e.getMessage());
+            try{
+                Files.delete(snapshot.toPath());
+            } catch(IOException e1){
+                GoodLogger.error("Failed to delete failed snapshot file: " + snapshot.getName() + "\n Because: " + e.getMessage());
+            }
+            return false;
+        }
+    }
+
+    public static File makeNewSnapshot(File folder, String name){
+        File newSnapshot;
+        if(name == null){
+            LocalDateTime now = LocalDateTime.now();
+            newSnapshot =  new File(folder.toPath() +
+                    File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".nahumbackup");
+
+            for(int i = 1; newSnapshot.exists(); i++){
+                newSnapshot = new File(folder.toPath() +
+                        File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) +
+                        "-(" + i + ")" + ".nahumbackup");
+            }
+            NahumInventoryStuff.deleteOldBackups(folder);
+        } else {
+            newSnapshot = new File(folder.toPath().toString(), name + ".nahumbackup");
+        }
+        return newSnapshot;
+    }
+
+    public static boolean performPlayerSaveSnapshot(Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name){
+        UUID uuid = DataParser.getUuidFromObject(player);
+        File folder = getPlayerDeathsFolder(uuid);
+
+        if(uuid == null){
+            GoodLogger.warn("Couldn't get last dead player's uuid");
+            return false;
+        }
+
+        File snapshot = makeNewSnapshot(folder, null);
+        saveSnapshot(inventory, echest, uuid, snapshot);
+        deleteOldSnapshots(folder, name);
+
+        if(!writeTimeAndMessage(snapshot, uuid, message, "message")){
+            GoodLogger.warn("Couldn't save player's snapshot");
+            return false;
+        }
+
+        name = name.toLowerCase().replace("max", "");
+        name = name.replace("snapshot", "");
+
+        GoodLogger.debug(((OfflinePlayer)player).getName() + "'s " + name + " snapshot saved to: " + snapshot.getAbsolutePath());
+        return true;
+    }
+
+    public static String performAdminBufferSave(
+            Object admin, Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name, String otherPath
+    ){
+        if(name==null){
+            name = "maxSnapshots";
+        }
+        UUID playerUuid = DataParser.getUuidFromObject(player);
+        File folder = getPlayerBuffer(admin, player);
+
+        if(playerUuid == null){
+            GoodLogger.warn("Couldn't get last dead player's uuid");
+            return null;
+        }
+
+        File snapshot = makeNewSnapshot(folder, null);
+        saveSnapshot(inventory, echest, playerUuid, snapshot);
+        deleteOldSnapshots(folder, name);
+        deleteOldPlayers(folder.getParentFile(), name);
+
+        if(!writeTimeAndMessage(snapshot, playerUuid, message, "message")){
+            GoodLogger.warn("Couldn't save player's snapshot");
+            return null;
+        }
+
+        if(otherPath != null){
+            writeString(snapshot, playerUuid, otherPath, "linkedTo");
+        }
+
+        GoodLogger.debug(((OfflinePlayer)admin).getName() + "'s actions on " + ((OfflinePlayer)player).getName() + "'s inventories saved to: " + snapshot.getAbsolutePath());
+        return snapshot.getAbsolutePath();
+    }
+
+    public static boolean updateSnapshot(Path path, Object admin, Object player, String toWrite, String key){
+        File snapshot = path.toFile();
+        UUID playerUuid = DataParser.getUuidFromObject(player);
+        return writeString(snapshot, playerUuid, toWrite, key);
+    }
 }

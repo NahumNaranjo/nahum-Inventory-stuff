@@ -7,7 +7,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 
 import java.io.File;
-import java.io.ObjectInputFilter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,10 +14,12 @@ import java.util.*;
 
 public class NahumInventoryStuffCommand implements TabExecutor {
     private static String[] configNames = {
-            "all", "autoBackup", "fixedMode", "lapse", "schedule", "debug"
+            "all", "autoBackup", "fixedMode", "lapse", "schedule", "onDebug", "maxDeathSnapshots",
+            "maxJoinSnapshots", "maxLeaveSnapshots", "maxChangeSnapshots", "maxForcedSnapshots",
+            "maxPlayers", "maxSnapshots", "autoDelete", "deleteOlderThan"
     };
     private static String[] features = {
-            "debug", "backup", "restore", "config"
+            "debug", "backup", "restore", "config", "undo"
     };
     @Override
     public boolean onCommand (CommandSender sender, Command cmd, String label, String[]args){
@@ -133,7 +134,7 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                 }
                 ConfigDatum config = null;
                 switch(args[2]){
-                    case "debug":
+                    case "onDebug":
                         if(args[1].equalsIgnoreCase("set")) {
                             ConfigManager.setConfig("onDebug", Boolean.parseBoolean(args[3]));
                         }
@@ -145,6 +146,48 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                             ConfigManager.setConfig("autoBackup", Boolean.parseBoolean(args[3]));
                         }
                         config = ConfigManager.getConfigDatum("autoBackup");
+                        break;
+                    case "autoDelete":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("autoDelete", Boolean.parseBoolean(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("autoDelete");
+                        break;
+                    case "maxDeathSnapshots":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxDeathSnapshots", Integer.parseInt(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("maxDeathSnapshots");
+                        break;
+                    case "maxJoinSnapshots":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxJoinSnapshots", Integer.parseInt(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("maxJoinSnapshots");
+                        break;
+                    case "maxLeaveSnapshots":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxLeaveSnapshots", Integer.parseInt(args[3]));
+                        }
+                        config = ConfigManager.getConfigDatum("maxLeaveSnapshots");
+                        break;
+                    case "maxChangeSnapshots":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxChangeSnapshots", Integer.parseInt(args[3]));
+                        }
+                        config =  ConfigManager.getConfigDatum("maxChangeSnapshots");
+                        break;
+                    case "maxSnapshots":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxSnapshots", Integer.parseInt(args[3]));
+                        }
+                        config =  ConfigManager.getConfigDatum("maxSnapshots");
+                        break;
+                    case "maxPlayers":
+                        if(args[1].equalsIgnoreCase("set")) {
+                            ConfigManager.setConfig("maxPlayers", Integer.parseInt(args[3]));
+                        }
+                        config =  ConfigManager.getConfigDatum("maxPlayers");
                         break;
                     case "fixedMode":
                         if(args[1].equalsIgnoreCase("set")) {
@@ -220,7 +263,7 @@ public class NahumInventoryStuffCommand implements TabExecutor {
          }
          if(args.length == 4 && args[0].equalsIgnoreCase("config") && sender.hasPermission("nahum.nahumstuff.config.set") && !args[2].equalsIgnoreCase("all")){
              String last = args[2];
-             String[] booleans = {"autoBackup", "fixedMode", "debug"};
+             String[] booleans = {"autoBackup", "fixedMode", "onDebug", };
              for(String option : booleans){
                  if(option.toLowerCase().equals(last)){
                     completions.add("true");
