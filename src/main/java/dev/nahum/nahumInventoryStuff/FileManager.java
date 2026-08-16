@@ -464,11 +464,8 @@ public class FileManager {
             tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
                     DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0)));
 
-            tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
-                    DataParser.getItemStackArray(contents, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
-
-            tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
-                    DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)));
+            tag.put(NbtTags.getEquipment(),Serializer.serializeArmorToCompoundTag(
+                    DataParser.getItemStackArray(contents, Serializer.ARMORSIZE+1, Serializer.ARMOR_START)));
         }
 
         try{
@@ -479,12 +476,7 @@ public class FileManager {
     }
 
     public static void saveSnapshot(ItemStack[] inventory, ItemStack[] echest,UUID uuid, File file){
-        CompoundTag tag = getPlayerSnapshotData(file);
-
-        if(tag == null){
-            GoodLogger.warn("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + "!");
-            return;
-        }
+        CompoundTag tag = new CompoundTag();
 
         if(inventory != null){
             tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
@@ -536,21 +528,34 @@ public class FileManager {
     public static ItemStack[] loadInventory(Object giver){
         return Serializer.buildFullInventoryFromPlayerTag(getPlayerData(DataParser.getUuidFromObject(giver)));
     }
-
+    public static String cleanName(String name){
+        if(name.endsWith(".nahumbackup")){
+            name = name.replace(".nahumbackup", "");
+        }
+        name = name.replaceAll("-\\(\\d+\\)$", "");
+        return name;
+    }
     public static LocalDate getAgeFromName(String fileName) {
+        fileName = cleanName(fileName);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
         LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
         return dateTime.toLocalDate();
     }
     public static LocalDateTime getDateTimeFromName(String fileName) {
+        fileName = cleanName(fileName);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
         LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
         return dateTime;
     }
 
     public static void deleteOldSnapshots(File folder, String name) {
-        Integer max = (Integer) ConfigManager.getConfig(name);
-        if (max == null) max = 10;
+        int max;
+        try{
+            max = Integer.parseInt((String)ConfigManager.getConfig(name));
+        } catch (Exception exception){
+            GoodLogger.warn("Failed to delete old snapshots for " + name + ": \n" + exception.getMessage());
+            return;
+        }
 
         List<File> files = new ArrayList<>();
         try (Stream<Path> stream = Files.list(folder.toPath())) {
@@ -589,11 +594,18 @@ public class FileManager {
                 GoodLogger.debug("Failed to delete: " + file.getAbsolutePath());
             }
         }
+        GoodLogger.debug("finished deleting snapshots with max of " + max + " and size of " + files.size() + " deleted " + deleted);
+
     }
 
     public static void deleteOldPlayers(File folder, String name) {
-        Integer max = (Integer) ConfigManager.getConfig(name);
-        if (max == null) max = 10;
+        int max;
+        try{
+            max = Integer.parseInt((String)ConfigManager.getConfig(name));
+        } catch (Exception exception){
+            GoodLogger.warn("Failed to delete old snapshots for " + name + ": \n" + exception.getMessage());
+            return;
+        }
 
         if (max == 0) return; // Keep all
 
@@ -744,3 +756,16 @@ public class FileManager {
         return writeString(snapshot, playerUuid, toWrite, key);
     }
 }
+
+/*
+[03:11:16] [Server thread/WARN]: [net.minecraft.server.network.config.PrepareSpawnTask] Serialization errors:
+    EntityPlayer['nahum'/186, l='ServerLevel[world]', x=-73.00, y=100.00, z=1.65](nahum at -73.00419273355037,100.0,1.6546160180049645):
+    Failed to decode value '[]' from field 'equipment': Not a map: []
+
+    equipment: {
+    chest: {
+      count: 1,
+      id: "minecraft:golden_chestplate"
+    }
+  }
+ */

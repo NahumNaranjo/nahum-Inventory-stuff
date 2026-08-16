@@ -284,63 +284,43 @@ public class InventoryTools implements TabExecutor {
                 giverPlayer.getPlayer().getInventory().setContents(helper);
             } else {
                 recipient.getPlayer().getInventory().setContents(giverPlayer.getPlayer().getInventory().getContents());
-            }
-        } else if(OfflinePlayerSync.isOnline(giverPlayer) || OfflinePlayerSync.isOnline(recipient)){
-            Player onlinePlayer = null;
-            if(OfflinePlayerSync.isOnline(recipient)){
-                onlinePlayer = recipient.getPlayer();
-                ItemStack[] giverInv = FileManager.loadInventory(giverPlayer);
-                if(mode == 0) {
-                    saveSwapData(sender, onlinePlayer, giverPlayer);
-                    FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(giverPlayer));
-                }
                 saveTransferData(sender, recipient, recipient.getPlayer().getInventory().getContents(), giverName);
-                FileManager.saveInventory(giverInv, DataParser.getUuidFromObject(onlinePlayer));
-            } else {
-                onlinePlayer = giverPlayer.getPlayer();
-                if(mode == 0){
-                    saveSwapData(sender, onlinePlayer, recipient);
-                    FileManager.pasteInventory(FileManager.loadInventory(recipient), onlinePlayer);
-                }
-                saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(FileManager.getPlayerData(recipient.getUniqueId())), giverName);
-                FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(recipient));
             }
-        } else if (!OfflinePlayerSync.isOnline(giverPlayer) && !OfflinePlayerSync.isOnline(recipient)){
+        } else {
             try{
-                File recipientData = FileManager.getPlayerFile(recipient.getUniqueId());
                 CompoundTag giverTag = FileManager.getPlayerData(giverPlayer.getUniqueId());
                 CompoundTag recipientTag = FileManager.getPlayerData(recipient.getUniqueId());
+                GoodLogger.debug("got to save all vars");
 
                 if(recipientTag == null){
                     GoodLogger.warn(recipient.getName() + "'s player data is not a valid file!");
                     return false;
-                }
-
+                }   
                 if(giverTag == null){
                     GoodLogger.warn(giverName + "'s player data is not a valid file!");
                     return false;
                 }
 
-                Optional<ListTag> list =  giverTag.getList(NbtTags.getInventory());
-                if(list.isEmpty()){
-                    GoodLogger.warn(giverName + "'s Inventory is empty!");
-                    return false;
+                ListTag listTag = giverTag.getListOrEmpty(NbtTags.getInventory());
+                GoodLogger.debug("got list");
+                if(mode == 0){
+                    FileManager.saveInventory(Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverPlayer);
+                    GoodLogger.debug("wrote list2");
+                    saveSwapData(sender, recipient, giverPlayer);
+                    GoodLogger.debug("backd list2");
+                }
+                if(mode != 0) {
+                    saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverName);
+                    GoodLogger.debug("backd list1");
                 }
 
-                ListTag listTag = list.get();
-                if(mode == 0){
-                    ListTag newListTag = recipientTag.getListOrEmpty(NbtTags.getInventory());
-                    if(!newListTag.isEmpty()){
-                        giverTag.put(NbtTags.getInventory(), newListTag);
-                        NbtIo.writeCompressed(giverTag, FileManager.getPlayerFile(giverPlayer.getUniqueId()).toPath());
-                    }
-                    saveSwapData(sender, recipient, giverPlayer);
-                }
-                saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverName);
                 recipientTag.put(NbtTags.getInventory(), listTag);
-                NbtIo.writeCompressed(recipientTag, recipientData.toPath());
+                GoodLogger.debug("put list1");
+                FileManager.saveInventory(Serializer.buildFullInventoryFromPlayerTag(giverTag), recipient);
+                GoodLogger.debug("wrote list1");
             } catch (Exception e){
                 GoodLogger.error(recipient.getName() + "'s player data is not a valid file!");
+                e.printStackTrace();
                 return false;
             }
         }
@@ -352,7 +332,6 @@ public class InventoryTools implements TabExecutor {
 
 
     public static boolean seeInventory(OfflinePlayer targetPlayer, Player viewer, CommandSender sender){
-        // Create a copy of the ender chest to prevent modifications
         Inventory inventory = Bukkit.createInventory(null, InventoryType.PLAYER, ChatColor.BOLD + targetPlayer.getName() + "'s Inventory");
         if(targetPlayer.getPlayer() != null){
             inventory.setContents(targetPlayer.getPlayer().getInventory().getContents());
@@ -457,6 +436,8 @@ public class InventoryTools implements TabExecutor {
                 viewer.openInventory(inventory);
             } catch (Exception e){
                 sender.sendMessage(ChatColor.RED + targetPlayer.getName() + "'s player data is not a valid file!");
+                GoodLogger.debug(e.toString());
+                e.printStackTrace();
             }
         }
         return true;
@@ -516,3 +497,29 @@ public class InventoryTools implements TabExecutor {
         return true;
     }
 }
+
+/*
+ else if(OfflinePlayerSync.isOnline(giverPlayer) || OfflinePlayerSync.isOnline(recipient)){
+            Player onlinePlayer = null;
+            if(OfflinePlayerSync.isOnline(recipient)){
+                onlinePlayer = recipient.getPlayer();
+                ItemStack[] giverInv = FileManager.loadInventory(giverPlayer);
+                if(mode == 0) {
+                    saveSwapData(sender, onlinePlayer, giverPlayer);
+                    FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(giverPlayer));
+                }
+                saveTransferData(sender, recipient, recipient.getPlayer().getInventory().getContents(), giverName);
+                FileManager.saveInventory(giverInv, DataParser.getUuidFromObject(onlinePlayer));
+            } else {
+                onlinePlayer = giverPlayer.getPlayer();
+                if(mode == 0){
+                    saveSwapData(sender, onlinePlayer, recipient);
+                    FileManager.pasteInventory(FileManager.loadInventory(recipient), onlinePlayer);
+                }
+                saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(FileManager.getPlayerData(recipient.getUniqueId())), giverName);
+                FileManager.saveInventory(onlinePlayer.getInventory().getContents(), DataParser.getUuidFromObject(recipient));
+            }
+        }
+
+if (!OfflinePlayerSync.isOnline(giverPlayer) && !OfflinePlayerSync.isOnline(recipient))
+ */

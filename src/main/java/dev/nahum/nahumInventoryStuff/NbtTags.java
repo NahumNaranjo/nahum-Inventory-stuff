@@ -13,6 +13,7 @@ public class NbtTags {
     private static String legs = "legs";
     private static String feet = "feet";
     private static String offhand = "offhand";
+    private static String[] armor = {head, feet, chest, legs, offhand};
 
     public static String getEchest() {return echest;}
     public static String getInventory() {return inventory;}
@@ -26,4 +27,5 @@ public class NbtTags {
     public static String getLegs() {return legs;}
     public static String getFeet() {return feet;}
     public static String getOffhand() {return offhand;}
+    public static String[] getArmor() {return armor;}
 }

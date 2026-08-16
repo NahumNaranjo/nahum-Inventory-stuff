@@ -16,7 +16,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-
+//TODO: custom inventories/inventory states
+//      custom ui engine
 public final class NahumInventoryStuff extends JavaPlugin {
 
     private final static String date = "14/August/26";

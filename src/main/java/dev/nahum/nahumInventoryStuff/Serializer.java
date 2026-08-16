@@ -9,11 +9,13 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.RegistryOps;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -67,6 +69,41 @@ public class Serializer {
         return tag;
     }
 
+    public static CompoundTag serializeArmorToCompoundTag(ItemStack[] itemStack){
+        CompoundTag returning = new CompoundTag();
+
+        for(int i = 0; i < itemStack.length; i++){
+            try{
+                ItemStack item = itemStack[i];
+
+                if(item == null || item.getType().isAir()){
+                    continue;
+                }
+
+                CompoundTag tag = new CompoundTag();
+                tag.putInt(NbtTags.getCount(), 1);
+                Material mat = item.getType();
+                String id = mat.getKey().toString();
+                tag.putString(NbtTags.getId(), id);
+                // EquipmentSlot defaultSlot = net.minecraft.world.item.ItemStack..getEquipmentSlot(nmsItem);
+
+                if(defaultSlot == EquipmentSlot.HEAD ){
+                    returning.put(NbtTags.getHead(), tag);
+                } else if(defaultSlot == EquipmentSlot.CHEST ){
+                    returning.put(NbtTags.getChest(), tag);
+                } else if(defaultSlot == EquipmentSlot.LEGS ){
+                    returning.put(NbtTags.getLegs(), tag);
+                }else if(defaultSlot == EquipmentSlot.FEET ){
+                    returning.put(NbtTags.getFeet(), tag);
+                } else {
+                    returning.put(NbtTags.getOffhand(), tag);
+                }
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        return returning;
+    }
     private static ListTag serializeToListTag(ItemStack[] itemStack, String contextName){
         ListTag listTag = new ListTag();
 

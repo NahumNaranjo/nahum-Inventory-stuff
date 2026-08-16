@@ -45,7 +45,7 @@ commands:
     permission: nahum.nahumstuff
     permission-message: You do not have permission to use this command!
     usage: /<command> <option>
-    aliases: [nahuminvstuff, nahuminv, nahumis, nahumiv]
+    aliases: [nahuminvstuff, nahuminv, nahumis, nahumiv, nis]
 
 permissions:
   # Echest Tools Permissions
