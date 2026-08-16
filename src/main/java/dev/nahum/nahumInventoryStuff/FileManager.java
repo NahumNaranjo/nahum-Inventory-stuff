@@ -522,6 +522,7 @@ public class FileManager {
 
         recipient.getInventory().setItemInOffHand(
                 DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)[0]);
+        recipient.updateInventory();
         return recipient;
     }
 
@@ -754,6 +755,17 @@ public class FileManager {
         File snapshot = path.toFile();
         UUID playerUuid = DataParser.getUuidFromObject(player);
         return writeString(snapshot, playerUuid, toWrite, key);
+    }
+
+    public static Object reloadInventory(Object player){
+        ItemStack[] inv = loadInventory(player);
+        if(inv == null){
+            return player;
+        }
+        if(((OfflinePlayer)player).isOnline()) {
+            return pasteInventory(inv, ((OfflinePlayer) player).getPlayer());
+        }
+        return player;
     }
 }
 

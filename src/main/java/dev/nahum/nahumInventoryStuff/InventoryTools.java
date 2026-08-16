@@ -295,29 +295,54 @@ public class InventoryTools implements TabExecutor {
                 if(recipientTag == null){
                     GoodLogger.warn(recipient.getName() + "'s player data is not a valid file!");
                     return false;
-                }   
+                }
                 if(giverTag == null){
                     GoodLogger.warn(giverName + "'s player data is not a valid file!");
                     return false;
                 }
+                ItemStack[] recipientInv = Serializer.buildFullInventoryFromPlayerTag(recipientTag);
+                ItemStack[] giverInv =  Serializer.buildFullInventoryFromPlayerTag(giverTag);
 
-                ListTag listTag = giverTag.getListOrEmpty(NbtTags.getInventory());
+
                 GoodLogger.debug("got list");
                 if(mode == 0){
-                    FileManager.saveInventory(Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverPlayer);
+                    if(giverPlayer.isOnline()){
+                        Player online = giverPlayer.getPlayer();
+                        giverInv = online.getInventory().getContents();
+                        if(recipient.isOnline()){
+                            recipientInv = recipient.getPlayer().getInventory().getContents();
+                        }
+                        FileManager.pasteInventory(recipientInv, online);
+                        GoodLogger.debug("pasted recipient inventory to giverPlayer");
+                    } else {
+                        FileManager.saveInventory(recipientInv, giverPlayer);
+                        GoodLogger.debug("saved recipient inventory to giverPlayer.dat");
+                    }
                     GoodLogger.debug("wrote list2");
                     saveSwapData(sender, recipient, giverPlayer);
                     GoodLogger.debug("backd list2");
                 }
+
+
+                GoodLogger.debug("put list1");
+                GoodLogger.debug("wrote list1");
                 if(mode != 0) {
-                    saveTransferData(sender, recipient, Serializer.buildFullInventoryFromPlayerTag(recipientTag), giverName);
+                    saveTransferData(sender, recipient, recipientInv, giverName);
                     GoodLogger.debug("backd list1");
                 }
+                if(recipient.isOnline()){
+                    Player online = recipient.getPlayer();
+                    if(giverPlayer.isOnline()){
+                        giverInv = online.getInventory().getContents();
+                    }
+                    FileManager.pasteInventory(giverInv, online);
+                    GoodLogger.debug("pasted giver inventory to recipient's");
+                } else {
+                    FileManager.saveInventory(giverInv, recipient);
+                    GoodLogger.debug("saved giver inventory to recipient.dat");
+                }
 
-                recipientTag.put(NbtTags.getInventory(), listTag);
-                GoodLogger.debug("put list1");
-                FileManager.saveInventory(Serializer.buildFullInventoryFromPlayerTag(giverTag), recipient);
-                GoodLogger.debug("wrote list1");
+                GoodLogger.debug("reloaded inventory");
             } catch (Exception e){
                 GoodLogger.error(recipient.getName() + "'s player data is not a valid file!");
                 e.printStackTrace();

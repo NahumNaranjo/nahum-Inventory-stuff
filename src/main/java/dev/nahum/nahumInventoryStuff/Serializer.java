@@ -85,17 +85,23 @@ public class Serializer {
                 Material mat = item.getType();
                 String id = mat.getKey().toString();
                 tag.putString(NbtTags.getId(), id);
-                // EquipmentSlot defaultSlot = net.minecraft.world.item.ItemStack..getEquipmentSlot(nmsItem);
+                EquipmentSlot defaultSlot = mat.getEquipmentSlot();
+                GoodLogger.debug("Slot is " + defaultSlot.name());
 
                 if(defaultSlot == EquipmentSlot.HEAD ){
+                    GoodLogger.debug("Slot was " + EquipmentSlot.HEAD.name());
                     returning.put(NbtTags.getHead(), tag);
                 } else if(defaultSlot == EquipmentSlot.CHEST ){
+                    GoodLogger.debug("Slot was " + EquipmentSlot.CHEST.name());
                     returning.put(NbtTags.getChest(), tag);
                 } else if(defaultSlot == EquipmentSlot.LEGS ){
+                    GoodLogger.debug("Slot was " + EquipmentSlot.LEGS.name());
                     returning.put(NbtTags.getLegs(), tag);
                 }else if(defaultSlot == EquipmentSlot.FEET ){
+                    GoodLogger.debug("Slot was " + EquipmentSlot.FEET.name());
                     returning.put(NbtTags.getFeet(), tag);
                 } else {
+                    GoodLogger.debug("Slot was " + EquipmentSlot.OFF_HAND.name());
                     returning.put(NbtTags.getOffhand(), tag);
                 }
             } catch (Exception e){
