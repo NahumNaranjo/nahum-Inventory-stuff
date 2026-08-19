@@ -21,6 +21,8 @@ public class DataParser {
             uuid = offlinePlayer.getUniqueId();
         } else if (object instanceof UUID) {
             return (UUID) object;
+        } else if (object instanceof String){
+            uuid = UUID.fromString((String)object);
         } else {
             return null;
         }

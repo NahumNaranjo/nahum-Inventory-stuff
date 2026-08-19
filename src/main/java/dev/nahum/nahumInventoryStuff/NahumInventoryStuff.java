@@ -1,6 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.ListTag;
+import org.apache.logging.log4j.core.pattern.PlainTextRenderer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -28,6 +29,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private static List<UUID> playerWatchList = new ArrayList<>();
     private static Map<UUID, UUID> isEditingList = new HashMap<>();
     private static Instant lastTimeBackuped;
+    private BackupManager  backupManager = new BackupManager();
 
     public static String getCredits() {
         return "NahumInventoryStuff :D\n" +
@@ -217,7 +219,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 GoodLogger.debug("--- Fixed Mode Check ---");
 
                 if (ConfigManager.hasAutoDelete()) {
-                    deleteOldBackups(FileManager.getBackupFolder());
+                    deleteOldBackups(PathManager.getBackupFolder());
                 }
                 LocalTime now = LocalTime.now();
                 LocalTime scheduled = ConfigManager.getParsedSchedule();
@@ -250,7 +252,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                     if (lastBackupDate.isBefore(today)) {
                         GoodLogger.info("✓ Performing scheduled backup at " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
                         if (ConfigManager.hasAutoDelete()) {
-                            deleteOldBackups(FileManager.getBackupFolder());
+                            deleteOldBackups(PathManager.getBackupFolder());
                         }
                         performBackup();
                         lastTimeBackuped = Instant.now();
@@ -302,7 +304,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                             formatDuration(elapsedSeconds) + " / interval: " +
                             formatDuration(intervalSeconds) + ")");
                     if (ConfigManager.hasAutoDelete()) {
-                        deleteOldBackups(FileManager.getBackupFolder());
+                        deleteOldBackups(PathManager.getBackupFolder());
                     }
                     performBackup();
                     lastTimeBackuped = Instant.now();
@@ -340,7 +342,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
 
     public void performBackup() {
         GoodLogger.info("Performing backup...");
-        Map<UUID, LinkedList<ListTag>> onlineUsers = FileManager.fetchAllOnlineUserData();
-        FileManager.writeBackup(null, onlineUsers);
+        Map<UUID, LinkedList<ListTag>> onlineUsers = PlayerDataReader.fetchAllOnlineUserData();
+        backupManager.writeBackup(null, onlineUsers);
     }
 }
