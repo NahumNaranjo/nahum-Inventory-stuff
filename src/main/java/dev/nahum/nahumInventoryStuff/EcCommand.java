@@ -34,7 +34,7 @@ public class EcCommand implements CommandExecutor {
             }
             OfflinePlayer offlinePlayer = OfflinePlayerSync.getPlayer(option);
             if (offlinePlayer != null) {
-                EchestTools.seeEchest(offlinePlayer, viewer, sender);
+                EchestToolsCommand.seeEchest(offlinePlayer, viewer, sender);
                 return true;
             }
             sender.sendMessage(ChatColor.RED + "That player does not exist.");
@@ -51,7 +51,7 @@ public class EcCommand implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
                     return true;
                 }
-                EchestTools.cleanEnderchest(offlinePlayer, sender);
+                EchestToolsCommand.cleanEnderchest(offlinePlayer, sender);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         offlinePlayer.getName() + "'s echest using the command /ec with the argument \"clear\"!");
                 break;

@@ -1,14 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class CleanupManager {
     private CleanupManager() {
@@ -42,57 +35,24 @@ public class CleanupManager {
     }
 
     public static void deleteOldPlayers(File folder, String name) {
-        int max;
-        try {
-            max = Integer.parseInt((String) ConfigManager.getConfig(name));
-        } catch (Exception exception) {
-            GoodLogger.warn("Failed to delete old snapshots for " + name + ": \n" + exception.getMessage());
-            return;
-        }
+        int max = (int)ConfigManager.getConfigOrDefault(name, 10);
 
         if (max == 0) return; // Keep all
 
-        List<File> playerDirs = new ArrayList<>();
-        Map<FileTime, File> timeToFile = new HashMap<>();
-        List<FileTime> creationTimes = new ArrayList<>();
-
-        // Read all player directories and their creation times
-        try (Stream<Path> stream = Files.list(folder.toPath())) {
-            stream.filter(Files::isDirectory)
-                    .forEach(path -> {
-                        try {
-                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
-                            FileTime creationTime = attr.creationTime();
-                            File file = path.toFile();
-
-                            playerDirs.add(file);
-                            timeToFile.put(creationTime, file);
-                            creationTimes.add(creationTime);
-                        } catch (IOException e) {
-                            GoodLogger.warn("Could not read attributes for: " + path.getFileName());
-                        }
-                    });
-        } catch (IOException e) {
-            GoodLogger.warn("Error reading directory: " + e.getMessage());
-            return;
-        }
+        List<File> playerDirs = FileManager.getAllDirectories(folder);
         if (playerDirs.size() <= max) return;
-        creationTimes.sort(FileTime::compareTo);
+        playerDirs.sort(Comparator.comparing(FileManager::getLocalDateTimeFromAtt));
         int toDelete = playerDirs.size() - max;
         int deleted = 0;
 
-        for (FileTime time : creationTimes) {
+        for (File file : playerDirs) {
             if (deleted >= toDelete) break;
 
-            File playerDir = timeToFile.get(time);
-            if (playerDir == null) continue;
-
-            // Delete directory recursively
-            if (FileManager.deleteFolder(playerDir)) {
-                GoodLogger.debug("Deleted old player data: " + playerDir.getAbsolutePath());
+            if (FileManager.deleteFolder(file)) {
+                GoodLogger.debug("Deleted old player data: " + file.getAbsolutePath());
                 deleted++;
             } else {
-                GoodLogger.warn("Failed to delete: " + playerDir.getAbsolutePath());
+                GoodLogger.warn("Failed to delete: " + file.getAbsolutePath());
             }
         }
     }

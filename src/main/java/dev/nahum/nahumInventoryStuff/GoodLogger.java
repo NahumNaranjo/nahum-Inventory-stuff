@@ -54,8 +54,9 @@ public class GoodLogger {
     public static void error(String message, Throwable throwable) {
         error(message);
         if (throwable != null) {
-            error("Exception: " + throwable.getClass().getSimpleName() + " -> " + throwable.getMessage());
-            throwable.printStackTrace();
+            error("Exception: " + throwable.getClass().getSimpleName() + " -> " + throwable.getMessage() + "\n" + "Cause: " + throwable.getCause());
+            if(NahumInventoryStuff.getOnDebug())
+                throwable.printStackTrace();
         }
     }
 

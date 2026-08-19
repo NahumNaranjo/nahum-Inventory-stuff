@@ -28,7 +28,9 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private static List<UUID> playerWatchList = new ArrayList<>();
     private static Map<UUID, UUID> isEditingList = new HashMap<>();
     private static Instant lastTimeBackuped;
-    private BackupManager backupManager = new BackupManager();
+    private PlayerDataReader reader = new PlayerDataReader();
+    private PlayerDataWriter writer = new PlayerDataWriter(reader);
+    private BackupManager backupManager = new BackupManager(reader, writer);
 
     public static String getCredits() {
         return "NahumInventoryStuff :D\n" +
@@ -140,7 +142,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
         GoodLogger.info("Debug mode: " + (onDebug ? "ON" : "OFF") + " (toggle with /nahumstuff debug)");
         GoodLogger.debug("Registering command executors...");
 
-        this.getCommand("echesttools").setExecutor(new EchestTools());
+        this.getCommand("echesttools").setExecutor(new EchestToolsCommand());
         this.getCommand("inventorytools").setExecutor(new InventoryTools());
         this.getCommand("inventoryclear").setExecutor(new InventoryClear());
         this.getCommand("ec").setExecutor(new EcCommand());
@@ -341,7 +343,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
 
     public void performBackup() {
         GoodLogger.info("Performing backup...");
-        Map<UUID, LinkedList<ListTag>> onlineUsers = PlayerDataReader.fetchAllOnlineUserData();
+        Map<UUID, LinkedList<ListTag>> onlineUsers = reader.fetchAllOnlineUserData();
         backupManager.writeBackup(null, onlineUsers);
     }
 }

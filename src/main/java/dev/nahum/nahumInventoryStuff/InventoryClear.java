@@ -35,7 +35,7 @@ public class InventoryClear implements CommandExecutor {
                     return true;
                 }
                 InventoryTools.cleanInventory(targetPlayer, sender);
-                EchestTools.cleanEnderchest(targetPlayer, sender);
+                EchestToolsCommand.cleanEnderchest(targetPlayer, sender);
                 sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
                 GoodLogger.info(sender.getName() + " has cleared all of " +
                         playerDisplayName + "'s inventories using the command /inventoryclear!");

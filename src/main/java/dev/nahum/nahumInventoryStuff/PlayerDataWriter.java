@@ -124,6 +124,10 @@ public class PlayerDataWriter {
         }
     }
 
+    public void saveEchest(ListTag contents, Object uuid){
+        saveEchest(Serializer.deserializeFromListTag(contents, Serializer.ECHESTSIZE), DataParser.getUuidFromObject(uuid));
+    }
+
     public void saveEchest(ItemStack[] contents, UUID uuid) {
         File file = PathManager.getPlayerFile(uuid);
         CompoundTag tag = reader.getPlayerData(uuid);
@@ -134,6 +138,14 @@ public class PlayerDataWriter {
         } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
         }
+    }
+
+    public void saveInventory(CompoundTag contents, Object uuid){
+        saveInventory(Serializer.buildFullInventoryFromPlayerTag(contents), DataParser.getUuidFromObject(uuid));
+    }
+
+    public void saveInventory(ListTag contents, Object uuid){
+        saveInventory(Serializer.deserializeFromListTag(contents, Serializer.MAIN_INVENTORY_SIZE), DataParser.getUuidFromObject(uuid));
     }
 
     public void saveInventory(ItemStack[] contents, Object recipient) {
@@ -161,6 +173,15 @@ public class PlayerDataWriter {
         }
     }
 
+    public void saveSnapshot(ListTag inventory, ListTag echest, Object uuid, File file){
+        saveSnapshot(
+                Serializer.deserializeFromListTag(inventory, Serializer.MAIN_INVENTORY_SIZE),
+                Serializer.deserializeFromListTag(echest, Serializer.ECHESTSIZE),
+                DataParser.getUuidFromObject(uuid),
+                file
+        );
+    }
+
     public void saveSnapshot(ItemStack[] inventory, ItemStack[] echest, UUID uuid, File file) {
         CompoundTag tag = new CompoundTag();
 
@@ -186,7 +207,7 @@ public class PlayerDataWriter {
         }
     }
 
-    public boolean writeString(File snapshot, UUID uuid, String message, String key) {
+    public boolean writeStringToSnapshot(File snapshot, UUID uuid, String message, String key) {
         CompoundTag tag = reader.getPlayerSnapshotData(snapshot);
         CompoundTag stringTag = tag.getCompoundOrEmpty("additionalInfo");
         if (stringTag.isEmpty()) {
@@ -205,6 +226,14 @@ public class PlayerDataWriter {
         }
     }
 
+    public void pasteInventory(CompoundTag contents, Player recipient) {
+        pasteInventory(Serializer.buildFullInventoryFromPlayerTag(contents), recipient);
+    }
+
+    public void pasteInventory(ListTag contents, Player recipient) {
+        pasteInventory(Serializer.deserializeFromListTag(contents, Serializer.MAIN_INVENTORY_SIZE), recipient);
+    }
+
     public void pasteInventory(ItemStack[] contents, Player recipient) {
         recipient.getInventory().setContents(
                 DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0));
@@ -215,6 +244,10 @@ public class PlayerDataWriter {
         recipient.getInventory().setItemInOffHand(
                 DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)[0]);
         recipient.updateInventory();
+    }
+
+    public void pasteEchest(ListTag contents, Player recipient) {
+        pasteEchest(Serializer.deserializeFromListTag(contents, Serializer.ECHESTSIZE), recipient);
     }
 
     public void pasteEchest(ItemStack[] contents, Player recipient) {

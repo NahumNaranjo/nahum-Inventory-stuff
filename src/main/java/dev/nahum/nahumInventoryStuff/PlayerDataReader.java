@@ -147,11 +147,6 @@ public class PlayerDataReader {
                     continue;
                 }
 
-                if (contents == null) {
-                    GoodLogger.warn("Failed to find player data for " + player.getName() + "!");
-                    continue;
-                }
-
                 listTag = Serializer.serializeToListTag(contents, player);
                 returning.put(player.getUniqueId(), listTag);
                 GoodLogger.info("Fetched " + player.getName());

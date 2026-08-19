@@ -4,14 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class FileManager {
@@ -69,8 +69,16 @@ public class FileManager {
     public static LocalDateTime getLocalDateTimeFromFileName(String fileName) {
         fileName = cleanName(fileName);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-        LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
-        return dateTime;
+        return LocalDateTime.parse(fileName, formatter);
+    }
+
+    public static LocalDateTime getLocalDateTimeFromAtt(File file) {
+        if(!file.exists()) return LocalDateTime.now();
+
+        BasicFileAttributes attributes = getBasicFileAttributes(file);
+        FileTime time = attributes.lastModifiedTime();
+
+        return LocalDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
     }
 
     public static List<File> getAllFiles(File folder) {
@@ -164,5 +172,19 @@ public class FileManager {
         if (files.isEmpty()) return null;
 
         return files.get(DataParser.getOldestFileTime(new ArrayList<>(files.keySet())));
+    }
+
+    public static File getNewestFileFromAtt(String directoryPath) {
+        File dir = new File(directoryPath);
+        File[] files = dir.listFiles(File::isFile);
+
+        if (files == null || files.length == 0) {
+            return null;
+        }
+
+        Optional<File> newestFile = Arrays.stream(files)
+                .max(Comparator.comparingLong(File::lastModified));
+
+        return newestFile.orElse(null);
     }
 }

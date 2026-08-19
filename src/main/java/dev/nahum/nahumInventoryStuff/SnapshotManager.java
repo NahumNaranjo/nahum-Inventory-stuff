@@ -115,10 +115,10 @@ public class SnapshotManager {
             return null;
         }
 
-        writer.writeString(snapshot, playerUuid, playerUuid.toString(), "uuid");
+        writer.writeStringToSnapshot(snapshot, playerUuid, playerUuid.toString(), "uuid");
 
         if (otherPath != null) {
-            writer.writeString(snapshot, playerUuid, otherPath, "linkedTo");
+            writer.writeStringToSnapshot(snapshot, playerUuid, otherPath, "linkedTo");
         }
 
         GoodLogger.debug(((OfflinePlayer) admin).getName() + "'s actions on " + ((OfflinePlayer) player).getName() + "'s inventories saved to: " + snapshot.getAbsolutePath());
@@ -128,6 +128,6 @@ public class SnapshotManager {
     public boolean updateSnapshot(Path path, Object admin, Object player, String toWrite, String key) {
         File snapshot = path.toFile();
         UUID playerUuid = DataParser.getUuidFromObject(player);
-        return writer.writeString(snapshot, playerUuid, toWrite, key);
+        return writer.writeStringToSnapshot(snapshot, playerUuid, toWrite, key);
     }
 }

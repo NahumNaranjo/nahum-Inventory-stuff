@@ -9,11 +9,12 @@ import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public class BackupManager {
     public final File folder = PathManager.getBackupFolder();
@@ -31,39 +32,15 @@ public class BackupManager {
             return null;
         }
 
-        try (var stream = Files.list(folder.toPath())) {
-            Optional<Path> latestFile = stream
-                    .filter(Files::isRegularFile) // Exclude directories
-                    .max(Comparator.comparingLong(p -> p.toFile().lastModified()));
-
-            if (latestFile.isPresent()) {
-                return latestFile.get().toFile();
-            } else {
-                GoodLogger.warn("No files found in the directory.");
-            }
-        } catch (IOException e) {
-            GoodLogger.warn("Failed to list player data in backup folder!\nError: " + e);
-            e.printStackTrace();
-        }
-        return null;
+        return FileManager.getNewestFileFromAtt(folder.toPath().toString());
     }
 
+
+
     public boolean writeBackup(String name, Map<UUID, LinkedList<ListTag>> onlineUsers) {
-        if (folder == null) {
-            GoodLogger.error("Failed to find backup folder!");
-            return false;
-        }
         File newBackup;
         if (name == null) {
-            LocalDateTime now = LocalDateTime.now();
-            newBackup = new File(folder.toPath() +
-                    File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".nahumbackup");
-
-            for (int i = 1; newBackup.exists(); i++) {
-                newBackup = new File(folder.toPath() +
-                        File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) +
-                        "-(" + i + ")" + ".nahumbackup");
-            }
+            newBackup = FileNameManager.getBackupName(folder);
         } else {
             newBackup = new File(folder.toPath().toString(), name + ".nahumbackup");
         }
@@ -92,11 +69,6 @@ public class BackupManager {
     }
 
     public boolean readBackup(String toRead) {
-        if (folder == null) {
-            GoodLogger.error("Failed to find required folders!");
-            return false;
-        }
-
         File backupFile = (toRead == null) ? getLastBackup() : new File(folder, toRead);
         if (backupFile == null || !backupFile.exists()) {
             GoodLogger.error("Failed to find backup file!");
@@ -120,22 +92,8 @@ public class BackupManager {
                     if (player.getPlayer() != null && player.getPlayer().isOnline()) {
                         var onlinePlayer = player.getPlayer();
 
-                        onlinePlayer.getEnderChest().setContents(
-                                Serializer.deserializeFromListTag(echestData, Serializer.ECHESTSIZE)
-                        );
-
-                        ItemStack[] fullInventory = Serializer.deserializeFromListTag(invData, Serializer.INVENTORYSIZE);
-                        ItemStack[] mainInventory = new ItemStack[Serializer.MAIN_INVENTORY_SIZE];
-                        System.arraycopy(fullInventory, 0, mainInventory, 0, Serializer.MAIN_INVENTORY_SIZE);
-
-                        onlinePlayer.getInventory().setStorageContents(mainInventory);
-                        onlinePlayer.getInventory().setArmorContents(new ItemStack[]{
-                                fullInventory[Serializer.ARMOR_START],
-                                fullInventory[Serializer.ARMOR_START + 1],
-                                fullInventory[Serializer.ARMOR_START + 2],
-                                fullInventory[Serializer.ARMOR_START + 3]
-                        });
-                        onlinePlayer.getInventory().setItemInOffHand(fullInventory[Serializer.OFFHAND_SLOT]);
+                        writer.pasteEchest(echestData, onlinePlayer);
+                        writer.pasteEchest(invData, onlinePlayer);
                         continue;
                     }
 
@@ -153,7 +111,7 @@ public class BackupManager {
                     Serializer.applyFullInventoryToPlayer(existingPlayerTag, fullInventory);
 
                     NbtIo.writeCompressed(existingPlayerTag, playerFile.toPath());
-                    GoodLogger.info("Restored data for " + uuid);
+                    GoodLogger.debug("Restored data for " + uuid);
                     continue;
                 }
                 GoodLogger.warn("Failed to restore data due to invalid list format for " + uuid);

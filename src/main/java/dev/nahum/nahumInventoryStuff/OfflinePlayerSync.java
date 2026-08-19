@@ -3,6 +3,7 @@ package dev.nahum.nahumInventoryStuff;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Contract;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,5 +38,15 @@ public class OfflinePlayerSync {
         boolean online = player.getPlayer() != null;
         GoodLogger.debug("isOnline(" + (player == null ? "null" : player.getName()) + ") -> " + online);
         return online;
+    }
+
+    public static Player getOnlinePlayer(OfflinePlayer player) {
+        if (player == null) {
+            GoodLogger.debug("getOnlinePlayer(null) -> null");
+            return null;
+        }
+        Player onlinePlayer = player.getPlayer();
+        GoodLogger.debug("getOnlinePlayer(" + player.getName() + ") -> " + (onlinePlayer != null));
+        return onlinePlayer;
     }
 }
