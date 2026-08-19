@@ -13,12 +13,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
@@ -26,68 +26,84 @@ import java.util.stream.Stream;
 public class FileManager {
     final static NbtAccounter ACCOUNTER = NbtAccounter.create(32768 * 1024);
 
-    static public File getWorldDir(){
+    static public File getWorldDir() {
         return Bukkit.getWorlds().getFirst().getWorldFolder();
     }
-    static public File getPlayerFolder(){
+
+    static public File getPlayerFolder() {
         return new File(getWorldDir(), "playerdata");
     }
-    static public File getDataFolder(){return NahumInventoryStuff.getInstance().getDataFolder();}
-    static public NbtAccounter getAccounter(){return ACCOUNTER;}
+
+    static public File getDataFolder() {
+        return NahumInventoryStuff.getInstance().getDataFolder();
+    }
+
+    static public NbtAccounter getAccounter() {
+        return ACCOUNTER;
+    }
+
     static public File getPlayerFile(UUID uuid) {
         return new File(getPlayerFolder(), uuid.toString() + ".dat");
     }
 
-    static public File getSnapshotFolder(){
+    static public File getSnapshotFolder() {
         File f = new File(getDataFolder(), "snapshots");
         return createFolder(getDataFolder().toString(), "snapshots");
     }
 
-    static public File getBufferFolder(){
+    static public File getBufferFolder() {
         return createFolder(getSnapshotFolder().toString(), "buffers");
     }
-    static public File getAdminFolder(Object player){
-        if(player instanceof String){
+
+    static public File getAdminFolder(Object player) {
+        if (player instanceof String) {
             return createFolder(getBufferFolder().toString(), "console");
-        } else if(player == null){
+        } else if (player == null) {
             return createFolder(getBufferFolder().toString(), "console");
         } else {
             return createFolder(getBufferFolder().toString(), DataParser.getUuidFromObject(player).toString());
         }
 
     }
-    static public File getPlayerBuffer(Object admin, Object player) { return createFolder(getAdminFolder(admin).toString(), DataParser.getUuidFromObject(player).toString()); }
 
-    static public File getPlayersSnapshotFolder(){
-        return createFolder(getSnapshotFolder().toString(),  "players");
+    static public File getPlayerBuffer(Object admin, Object player) {
+        return createFolder(getAdminFolder(admin).toString(), DataParser.getUuidFromObject(player).toString());
     }
 
-    static public File getLonePlayerSnapshotFolder(Object player){
+    static public File getPlayersSnapshotFolder() {
+        return createFolder(getSnapshotFolder().toString(), "players");
+    }
+
+    static public File getLonePlayerSnapshotFolder(Object player) {
         return createFolder(getPlayersSnapshotFolder().toString(), DataParser.getUuidFromObject(player).toString());
     }
-    static public File getPlayerDeathsFolder(Object player){
+
+    static public File getPlayerDeathsFolder(Object player) {
         return createFolder(getLonePlayerSnapshotFolder(player).toString(), "deaths");
     }
-    static public File getPlayerJoinsFolder(Object player){
+
+    static public File getPlayerJoinsFolder(Object player) {
         return createFolder(getPlayersSnapshotFolder().toString(), "joins");
     }
-    static public File getPlayerLeavesFolder(Object player){
+
+    static public File getPlayerLeavesFolder(Object player) {
         return createFolder(getPlayersSnapshotFolder().toString(), "leaves");
     }
-    static public File getPlayerForcedFolder(Object player){
+
+    static public File getPlayerForcedFolder(Object player) {
         return createFolder(getPlayersSnapshotFolder().toString(), "ForcedSaves");
     }
 
-    static public File createFolder(String parent, String subfolder){
+    static public File createFolder(String parent, String subfolder) {
         File f = new File(parent, subfolder);
-        if(!f.exists()){
-            if(f.mkdirs()){
+        if (!f.exists()) {
+            if (f.mkdirs()) {
                 return f;
             } else {
                 GoodLogger.warn("Failed to create " + subfolder + " folder!");
                 return null;
             }
-        } else{
+        } else {
             return f;
         }
     }
@@ -102,9 +118,9 @@ public class FileManager {
         return directory.delete();
     }
 
-    static public CompoundTag getPlayerData(UUID uuid){
+    static public CompoundTag getPlayerData(UUID uuid) {
         File file = getPlayerFile(uuid);
-        try{
+        try {
             return NbtIo.readCompressed(file.toPath(), ACCOUNTER);
         } catch (IOException e) {
             GoodLogger.error("Failed to read player data!\nError: " + e);
@@ -112,8 +128,8 @@ public class FileManager {
         }
     }
 
-    static public CompoundTag getPlayerSnapshotData(File file){
-        try{
+    static public CompoundTag getPlayerSnapshotData(File file) {
+        try {
             return NbtIo.readCompressed(file.toPath(), ACCOUNTER);
         } catch (IOException e) {
             GoodLogger.error("Failed to read player data!\nError: " + e);
@@ -122,8 +138,8 @@ public class FileManager {
     }
 
     //IO helper methods
-    static public boolean isFolderEmpty(File f){
-        try(Stream<Path> stream = Files.list(f.toPath())){
+    static public boolean isFolderEmpty(File f) {
+        try (Stream<Path> stream = Files.list(f.toPath())) {
             return stream.findAny().isEmpty();
         } catch (IOException e) {
             GoodLogger.warn("Failed to list player data!\nError: " + e);
@@ -132,12 +148,12 @@ public class FileManager {
     }
 
     //Backup system
-    static public File getBackupFolder(){
+    static public File getBackupFolder() {
         File backupFolder = new File(getDataFolder(), "backup");
-        if(!backupFolder.exists()){
-            try{
+        if (!backupFolder.exists()) {
+            try {
                 backupFolder.mkdirs();
-            } catch (SecurityException e){
+            } catch (SecurityException e) {
                 GoodLogger.error("Failed to create backup folder!\nError: " + e);
             }
         }
@@ -145,14 +161,14 @@ public class FileManager {
     }
 
 
-    static public File getLastBackup(){
+    static public File getLastBackup() {
         File backupFolder = getBackupFolder();
 
-        if(backupFolder == null){
+        if (backupFolder == null) {
             GoodLogger.warn("Failed to find backup folder!");
             return null;
         }
-        if(isFolderEmpty(backupFolder)){
+        if (isFolderEmpty(backupFolder)) {
             GoodLogger.warn("Failed to list player data in backup folder!");
             return null;
         }
@@ -174,19 +190,19 @@ public class FileManager {
         return null;
     }
 
-    static public boolean writeBackup(String name, Map<UUID, LinkedList<ListTag>> onlineUsers){
+    static public boolean writeBackup(String name, Map<UUID, LinkedList<ListTag>> onlineUsers) {
         File backupFolder = getBackupFolder();
-        if(backupFolder == null){
+        if (backupFolder == null) {
             GoodLogger.error("Failed to find backup folder!");
             return false;
         }
         File newBackup;
-        if(name == null){
+        if (name == null) {
             LocalDateTime now = LocalDateTime.now();
-            newBackup =  new File(backupFolder.toPath() +
+            newBackup = new File(backupFolder.toPath() +
                     File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".nahumbackup");
 
-            for(int i = 1; newBackup.exists(); i++){
+            for (int i = 1; newBackup.exists(); i++) {
                 newBackup = new File(backupFolder.toPath() +
                         File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) +
                         "-(" + i + ")" + ".nahumbackup");
@@ -201,14 +217,14 @@ public class FileManager {
 
         toWrite.forEach((uuid, listTag) -> {
             ListTag playerBackupGroup = new ListTag();
-            for(ListTag playerListTag : listTag){
+            for (ListTag playerListTag : listTag) {
                 playerBackupGroup.add(playerListTag);
             }
 
             rootTag.put(uuid.toString(), playerBackupGroup);
         });
 
-        try{
+        try {
             NbtIo.writeCompressed(rootTag, newBackup.toPath());
             return true;
         } catch (IOException e) {
@@ -386,29 +402,29 @@ public class FileManager {
         return false;
     }
 
-    public static Map<UUID, ListTag> fetchOneUserData(String type){
+    public static Map<UUID, ListTag> fetchOneUserData(String type) {
         Map<UUID, ListTag> returning = new HashMap<>();
-        if(!type.equals(NbtTags.getInventory()) && !type.equals(NbtTags.getEchest())){
+        if (!type.equals(NbtTags.getInventory()) && !type.equals(NbtTags.getEchest())) {
             GoodLogger.error("Fetched user data for incorrect type: " + type);
             return returning;
         }
         int count = 0;
         GoodLogger.info("Fetching " + type + " user data...");
-        for(OfflinePlayer player : Bukkit.getOfflinePlayers()){
+        for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
             ListTag listTag;
             CompoundTag tag = FileManager.getPlayerData(player.getUniqueId());
-            if(player.isOnline()){
+            if (player.isOnline()) {
                 ItemStack[] contents;
-                if(type.equals(NbtTags.getEchest())){
+                if (type.equals(NbtTags.getEchest())) {
                     contents = player.getPlayer().getEnderChest().getContents();
-                } else if(type.equals(NbtTags.getInventory())){
+                } else if (type.equals(NbtTags.getInventory())) {
                     contents = player.getPlayer().getInventory().getContents();
                 } else {
                     GoodLogger.warn("Failed to find player data for " + player.getName() + " due to datatype issues.");
                     continue;
                 }
 
-                if(contents == null){
+                if (contents == null) {
                     GoodLogger.warn("Failed to find player data for " + player.getName() + "!");
                     continue;
                 }
@@ -420,13 +436,13 @@ public class FileManager {
                 continue;
             }
 
-            if(tag == null){
+            if (tag == null) {
                 GoodLogger.warn(player.getName() + " has no player data!");
                 continue;
             }
 
             listTag = tag.getListOrEmpty(type);
-            if(listTag.isEmpty()){
+            if (listTag.isEmpty()) {
                 GoodLogger.warn(player.getName() + " has no " + type + " data!");
                 continue;
             }
@@ -438,82 +454,187 @@ public class FileManager {
         return returning;
     }
 
-    public static void saveEchest(ItemStack[] contents, UUID uuid){
+    public static void loadAdminSnapshot(Object admin, Object player) {
+        loadAdminSnapshot(getPlayerBuffer(admin, player), player);
+    }
+
+    public static void loadAdminSnapshot(File f, Object player) {
+        GoodLogger.debug("started loadAdminSnapshot");
+        UUID playerUuid = DataParser.getUuidFromObject(player);
+        File snapshot = null;
+        if (playerUuid == null) {
+            GoodLogger.debug("Player is null!");
+            return;
+        }
+        GoodLogger.debug("Player UUID: " + playerUuid);
+        GoodLogger.debug("folder/file: " + f.getAbsolutePath());
+        if (f.isDirectory()) {
+            try (var stream = Files.list(f.toPath())) {
+                Optional<Path> newestFile = stream
+                        .filter(Files::isRegularFile)
+                        .max(Comparator.comparingLong(p -> p.toFile().lastModified()));
+
+                if (newestFile.isPresent()) {
+                    snapshot = newestFile.get().toFile();
+                } else {
+                    GoodLogger.debug("No file found!");
+                    return;
+                }
+            } catch (IOException e) {
+                GoodLogger.debug("Error found: " + e.getMessage());
+                e.printStackTrace();
+            }
+            GoodLogger.debug("got newest file");
+        } else {
+            snapshot = f;
+        }
+        if (snapshot != null) {
+            GoodLogger.debug("snapshot wasn't null");
+            CompoundTag snapshotTag = getPlayerSnapshotData(snapshot);
+            ListTag inv = snapshotTag.getListOrEmpty(NbtTags.getInventory());
+            ListTag echest = snapshotTag.getListOrEmpty(NbtTags.getEchest());
+            CompoundTag additionalInfo = snapshotTag.getCompoundOrEmpty("additionalInfo");
+            OfflinePlayer offlinePlayer = ((OfflinePlayer) player);
+            if (offlinePlayer == null) {
+                return;
+            }
+            GoodLogger.debug("OfflinePlayer " + offlinePlayer.getName());
+            Player online = null;
+            if (offlinePlayer.isOnline()) {
+                online = offlinePlayer.getPlayer();
+                GoodLogger.debug("Player was online");
+            }
+            GoodLogger.debug("player wasnt online");
+            if (!inv.isEmpty() && online != null)
+                pasteInventory(Serializer.buildFullInventoryFromPlayerTag(snapshotTag), online);
+            if (!echest.isEmpty() && online != null)
+                pasteEchest(Serializer.deserializeFromListTag(echest, Serializer.ECHESTSIZE), online);
+            if (!inv.isEmpty())
+                saveInventory(Serializer.buildFullInventoryFromPlayerTag(snapshotTag), offlinePlayer);
+            if (!echest.isEmpty())
+                saveEchest(Serializer.deserializeFromListTag(echest, Serializer.ECHESTSIZE), offlinePlayer.getUniqueId());
+            if (!additionalInfo.isEmpty()) {
+                String linkedTo = additionalInfo.getStringOr("linkedTo", "null");
+                if (linkedTo.equals("null")) {
+                    GoodLogger.debug("linkedTo is null");
+                    return;
+                }
+                Path path = Paths.get(linkedTo);
+                if (!path.toFile().exists()) {
+                    return;
+                }
+                CompoundTag linkedToTag = getPlayerSnapshotData(path.toFile());
+                GoodLogger.debug("linkedToPath: " + path);
+                GoodLogger.debug("linkedToTag: " + linkedToTag);
+                ListTag inv2 = linkedToTag.getListOrEmpty(NbtTags.getInventory());
+                ListTag echest2 = linkedToTag.getListOrEmpty(NbtTags.getEchest());
+                String uuidString = additionalInfo.getStringOr("uuid", "null");
+                if (uuidString.equals("null")) {
+                    return;
+                }
+                GoodLogger.debug("uuid: " + uuidString);
+                offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuidString));
+                online = null;
+                if (offlinePlayer.isOnline()) {
+                    online = offlinePlayer.getPlayer();
+                    GoodLogger.debug("Player: "  + online.getName());
+                }
+                GoodLogger.debug("Player: "  + offlinePlayer.getName());
+                if (!inv2.isEmpty() && online != null)
+                    pasteInventory(Serializer.buildFullInventoryFromPlayerTag(linkedToTag), online);
+                if (!echest2.isEmpty() && online != null)
+                    pasteEchest(Serializer.deserializeFromListTag(echest2, Serializer.ECHESTSIZE), online);
+                if (!inv2.isEmpty())
+                    saveInventory(Serializer.buildFullInventoryFromPlayerTag(linkedToTag), offlinePlayer);
+                if (!echest2.isEmpty())
+                    saveEchest(Serializer.deserializeFromListTag(echest2, Serializer.ECHESTSIZE), offlinePlayer.getUniqueId());
+                GoodLogger.debug("succeeded to restore both of their inventories");
+            }
+        }
+    }
+
+    public static void saveEchest(ItemStack[] contents, UUID uuid) {
         File file = getPlayerFile(uuid);
         CompoundTag tag = getPlayerData(uuid);
 
         tag.put(NbtTags.getEchest(), Serializer.serializeToListTag(contents));
-        try{
+        try {
             NbtIo.writeCompressed(tag, file.toPath());
-        } catch(IOException e){
+        } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
         }
     }
 
-    public static void saveInventory(ItemStack[] contents, Object recipient){
+    public static void saveInventory(ItemStack[] contents, Object recipient) {
         UUID uuid = DataParser.getUuidFromObject(recipient);
         File file = getPlayerFile(uuid);
         CompoundTag tag = getPlayerData(uuid);
 
-        if(tag == null){
+        if (tag == null) {
             GoodLogger.warn("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + "!");
             return;
         }
 
-        if(contents != null){
-            tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+        if (contents != null) {
+            tag.put(NbtTags.getInventory(), Serializer.serializeToListTag(
                     DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0)));
 
-            tag.put(NbtTags.getEquipment(),Serializer.serializeArmorToCompoundTag(
-                    DataParser.getItemStackArray(contents, Serializer.ARMORSIZE+1, Serializer.ARMOR_START)));
+            tag.put(NbtTags.getEquipment(), Serializer.serializeArmorToCompoundTag(
+                    DataParser.getItemStackArray(contents, Serializer.ARMORSIZE + 1, Serializer.ARMOR_START)));
         }
 
-        try{
+        try {
             NbtIo.writeCompressed(tag, file.toPath());
-        } catch(IOException e){
+        } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
         }
     }
 
-    public static void saveSnapshot(ItemStack[] inventory, ItemStack[] echest,UUID uuid, File file){
+    public static void saveSnapshot(ItemStack[] inventory, ItemStack[] echest, UUID uuid, File file) {
         CompoundTag tag = new CompoundTag();
 
-        if(inventory != null){
-            tag.put(NbtTags.getInventory(),Serializer.serializeToListTag(
+        if (inventory != null) {
+            tag.put(NbtTags.getInventory(), Serializer.serializeToListTag(
                     DataParser.getItemStackArray(inventory, Serializer.MAIN_INVENTORY_SIZE, 0)));
 
-            tag.put(NbtTags.getEquipment(),Serializer.serializeToListTag(
+            tag.put(NbtTags.getEquipment(), Serializer.serializeToListTag(
                     DataParser.getItemStackArray(inventory, Serializer.ARMORSIZE, Serializer.ARMOR_START)));
 
-            tag.put(NbtTags.getOffhand(),Serializer.serializeToListTag(
+            tag.put(NbtTags.getOffhand(), Serializer.serializeToListTag(
                     DataParser.getItemStackArray(inventory, 1, Serializer.OFFHAND_SLOT)));
         }
 
-        if(echest != null){
+        if (echest != null) {
             tag.put(NbtTags.getEchest(), Serializer.serializeToListTag(echest));
         }
 
-        try{
+        try {
             NbtIo.writeCompressed(tag, file.toPath());
-        } catch(IOException e){
+        } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + Bukkit.getOfflinePlayer(uuid).getName() + ": \n" + e.getMessage());
         }
     }
-    public static boolean writeString(File snapshot, UUID uuid, String message, String key){
-        CompoundTag tag = getPlayerSnapshotData(snapshot);
-        ListTag listTag = new ListTag();
-        listTag.add(Serializer.serializeString(message, key));
 
-        try{
+    public static boolean writeString(File snapshot, UUID uuid, String message, String key) {
+        CompoundTag tag = getPlayerSnapshotData(snapshot);
+        CompoundTag stringTag = tag.getCompoundOrEmpty("additionalInfo");
+        if (stringTag.isEmpty()) {
+            stringTag = new CompoundTag();
+        }
+        stringTag.putString(key, message);
+
+        tag.put("additionalInfo", stringTag);
+
+        try {
             NbtIo.writeCompressed(tag, snapshot.toPath());
             return true;
-        } catch(IOException e){
+        } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + uuid.toString() + ": \n" + e.getMessage());
             return false;
         }
     }
 
-    public static Player pasteInventory(ItemStack[] contents, Player recipient){
+    public static void pasteInventory(ItemStack[] contents, Player recipient) {
         recipient.getInventory().setContents(
                 DataParser.getItemStackArray(contents, Serializer.MAIN_INVENTORY_SIZE, 0));
 
@@ -523,25 +644,32 @@ public class FileManager {
         recipient.getInventory().setItemInOffHand(
                 DataParser.getItemStackArray(contents, 1, Serializer.OFFHAND_SLOT)[0]);
         recipient.updateInventory();
-        return recipient;
     }
 
-    public static ItemStack[] loadInventory(Object giver){
+    public static void pasteEchest(ItemStack[] contents, Player recipient) {
+        recipient.getInventory().setContents(contents);
+        recipient.updateInventory();
+    }
+
+    public static ItemStack[] loadInventory(Object giver) {
         return Serializer.buildFullInventoryFromPlayerTag(getPlayerData(DataParser.getUuidFromObject(giver)));
     }
-    public static String cleanName(String name){
-        if(name.endsWith(".nahumbackup")){
+
+    public static String cleanName(String name) {
+        if (name.endsWith(".nahumbackup")) {
             name = name.replace(".nahumbackup", "");
         }
         name = name.replaceAll("-\\(\\d+\\)$", "");
         return name;
     }
+
     public static LocalDate getAgeFromName(String fileName) {
         fileName = cleanName(fileName);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
         LocalDateTime dateTime = LocalDateTime.parse(fileName, formatter);
         return dateTime.toLocalDate();
     }
+
     public static LocalDateTime getDateTimeFromName(String fileName) {
         fileName = cleanName(fileName);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -551,9 +679,9 @@ public class FileManager {
 
     public static void deleteOldSnapshots(File folder, String name) {
         int max;
-        try{
-            max = Integer.parseInt((String)ConfigManager.getConfig(name));
-        } catch (Exception exception){
+        try {
+            max = Integer.parseInt((String) ConfigManager.getConfig(name));
+        } catch (Exception exception) {
             GoodLogger.warn("Failed to delete old snapshots for " + name + ": \n" + exception.getMessage());
             return;
         }
@@ -601,9 +729,9 @@ public class FileManager {
 
     public static void deleteOldPlayers(File folder, String name) {
         int max;
-        try{
-            max = Integer.parseInt((String)ConfigManager.getConfig(name));
-        } catch (Exception exception){
+        try {
+            max = Integer.parseInt((String) ConfigManager.getConfig(name));
+        } catch (Exception exception) {
             GoodLogger.warn("Failed to delete old snapshots for " + name + ": \n" + exception.getMessage());
             return;
         }
@@ -655,34 +783,34 @@ public class FileManager {
         }
     }
 
-    public static boolean writeTimeAndMessage(File snapshot, UUID uuid, String message, String key){
+    public static boolean writeTimeAndMessage(File snapshot, UUID uuid, String message, String key) {
         CompoundTag tag = getPlayerSnapshotData(snapshot);
         ListTag listTag = new ListTag();
         listTag.add(Serializer.serializeString(message, key));
         listTag.add(Serializer.serializeString(Instant.now().toString(), "time"));
 
-        try{
+        try {
             NbtIo.writeCompressed(tag, snapshot.toPath());
             return true;
-        } catch(IOException e){
+        } catch (IOException e) {
             GoodLogger.error("Failed to save player data for " + uuid.toString() + ": \n" + e.getMessage());
-            try{
+            try {
                 Files.delete(snapshot.toPath());
-            } catch(IOException e1){
+            } catch (IOException e1) {
                 GoodLogger.error("Failed to delete failed snapshot file: " + snapshot.getName() + "\n Because: " + e.getMessage());
             }
             return false;
         }
     }
 
-    public static File makeNewSnapshot(File folder, String name){
+    public static File makeNewSnapshot(File folder, String name) {
         File newSnapshot;
-        if(name == null){
+        if (name == null) {
             LocalDateTime now = LocalDateTime.now();
-            newSnapshot =  new File(folder.toPath() +
+            newSnapshot = new File(folder.toPath() +
                     File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".nahumbackup");
 
-            for(int i = 1; newSnapshot.exists(); i++){
+            for (int i = 1; newSnapshot.exists(); i++) {
                 newSnapshot = new File(folder.toPath() +
                         File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) +
                         "-(" + i + ")" + ".nahumbackup");
@@ -694,11 +822,11 @@ public class FileManager {
         return newSnapshot;
     }
 
-    public static boolean performPlayerSaveSnapshot(Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name){
+    public static boolean performPlayerSaveSnapshot(Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name) {
         UUID uuid = DataParser.getUuidFromObject(player);
         File folder = getPlayerDeathsFolder(uuid);
 
-        if(uuid == null){
+        if (uuid == null) {
             GoodLogger.warn("Couldn't get last dead player's uuid");
             return false;
         }
@@ -707,7 +835,7 @@ public class FileManager {
         saveSnapshot(inventory, echest, uuid, snapshot);
         deleteOldSnapshots(folder, name);
 
-        if(!writeTimeAndMessage(snapshot, uuid, message, "message")){
+        if (!writeTimeAndMessage(snapshot, uuid, message, "message")) {
             GoodLogger.warn("Couldn't save player's snapshot");
             return false;
         }
@@ -715,21 +843,21 @@ public class FileManager {
         name = name.toLowerCase().replace("max", "");
         name = name.replace("snapshot", "");
 
-        GoodLogger.debug(((OfflinePlayer)player).getName() + "'s " + name + " snapshot saved to: " + snapshot.getAbsolutePath());
+        GoodLogger.debug(((OfflinePlayer) player).getName() + "'s " + name + " snapshot saved to: " + snapshot.getAbsolutePath());
         return true;
     }
 
     public static String performAdminBufferSave(
             Object admin, Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name, String otherPath
-    ){
-        if(name==null){
+    ) {
+        if (name == null) {
             name = "maxSnapshots";
         }
         UUID playerUuid = DataParser.getUuidFromObject(player);
         File folder = getPlayerBuffer(admin, player);
 
-        if(playerUuid == null){
-            GoodLogger.warn("Couldn't get last dead player's uuid");
+        if (playerUuid == null) {
+            GoodLogger.warn("Couldn't get last player's uuid");
             return null;
         }
 
@@ -738,46 +866,24 @@ public class FileManager {
         deleteOldSnapshots(folder, name);
         deleteOldPlayers(folder.getParentFile(), name);
 
-        if(!writeTimeAndMessage(snapshot, playerUuid, message, "message")){
+        if (!writeTimeAndMessage(snapshot, playerUuid, message, "message")) {
             GoodLogger.warn("Couldn't save player's snapshot");
             return null;
         }
 
-        if(otherPath != null){
+        writeString(snapshot, playerUuid, playerUuid.toString(), "uuid");
+
+        if (otherPath != null) {
             writeString(snapshot, playerUuid, otherPath, "linkedTo");
         }
 
-        GoodLogger.debug(((OfflinePlayer)admin).getName() + "'s actions on " + ((OfflinePlayer)player).getName() + "'s inventories saved to: " + snapshot.getAbsolutePath());
+        GoodLogger.debug(((OfflinePlayer) admin).getName() + "'s actions on " + ((OfflinePlayer) player).getName() + "'s inventories saved to: " + snapshot.getAbsolutePath());
         return snapshot.getAbsolutePath();
     }
 
-    public static boolean updateSnapshot(Path path, Object admin, Object player, String toWrite, String key){
+    public static boolean updateSnapshot(Path path, Object admin, Object player, String toWrite, String key) {
         File snapshot = path.toFile();
         UUID playerUuid = DataParser.getUuidFromObject(player);
         return writeString(snapshot, playerUuid, toWrite, key);
     }
-
-    public static Object reloadInventory(Object player){
-        ItemStack[] inv = loadInventory(player);
-        if(inv == null){
-            return player;
-        }
-        if(((OfflinePlayer)player).isOnline()) {
-            return pasteInventory(inv, ((OfflinePlayer) player).getPlayer());
-        }
-        return player;
-    }
 }
-
-/*
-[03:11:16] [Server thread/WARN]: [net.minecraft.server.network.config.PrepareSpawnTask] Serialization errors:
-    EntityPlayer['nahum'/186, l='ServerLevel[world]', x=-73.00, y=100.00, z=1.65](nahum at -73.00419273355037,100.0,1.6546160180049645):
-    Failed to decode value '[]' from field 'equipment': Not a map: []
-
-    equipment: {
-    chest: {
-      count: 1,
-      id: "minecraft:golden_chestplate"
-    }
-  }
- */

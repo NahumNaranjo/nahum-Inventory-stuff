@@ -19,7 +19,7 @@ public class InventoryClear implements CommandExecutor {
         String playerName = args[1];
 
         // Check if player exists
-        OfflinePlayer targetPlayer  = OfflinePlayerSync.getPlayer(playerName, sender);
+        OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(playerName);
         if (targetPlayer == null) {
             return true;
         }
@@ -28,9 +28,9 @@ public class InventoryClear implements CommandExecutor {
 
         switch (args[0].toLowerCase()) {
             case "all":
-                if(!sender.hasPermission("nahum.inventoryclear") &&
+                if (!sender.hasPermission("nahum.inventoryclear") &&
                         (!sender.hasPermission("nahum.inventorytools") && !sender.hasPermission("nahum.echesttools")) &&
-                        (!sender.hasPermission("nahum.echesttools.clear") && !sender.hasPermission("nahum.inventorytools.clear"))){
+                        (!sender.hasPermission("nahum.echesttools.clear") && !sender.hasPermission("nahum.inventorytools.clear"))) {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                     return true;
                 }
@@ -42,9 +42,9 @@ public class InventoryClear implements CommandExecutor {
                 break;
 
             case "echest":
-                if(!sender.hasPermission("nahum.inventoryclear") &&
+                if (!sender.hasPermission("nahum.inventoryclear") &&
                         !sender.hasPermission("nahum.echesttools") &&
-                        !sender.hasPermission("nahum.echesttools.clear")){
+                        !sender.hasPermission("nahum.echesttools.clear")) {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                     return true;
                 }
@@ -54,9 +54,9 @@ public class InventoryClear implements CommandExecutor {
                 break;
 
             case "inventory":
-                if(!sender.hasPermission("nahum.inventoryclear") &&
+                if (!sender.hasPermission("nahum.inventoryclear") &&
                         !sender.hasPermission("nahum.inventorytools") &&
-                        !sender.hasPermission("nahum.inventorytools.clear")){
+                        !sender.hasPermission("nahum.inventorytools.clear")) {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                     return true;
                 }

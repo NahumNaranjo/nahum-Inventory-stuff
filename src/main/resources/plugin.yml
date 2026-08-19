@@ -61,6 +61,12 @@ permissions:
   nahum.enderchesttools.transfer:
     description: Access to the transfer argument
     default: false
+  nahum.enderchesttools.swap:
+    description: Access to the swap argument
+    default: false
+  nahum.enderchesttools.edit:
+    description: Access to the edit argument
+    default: false
 
   # Inventory Tools Permissions
   nahum.inventorytools:
@@ -74,6 +80,12 @@ permissions:
     default: false
   nahum.inventorytools.transfer:
     description: Access to the transfer argument
+    default: false
+  nahum.inventorytools.swap:
+    description: Access to the swap argument
+    default: false
+  nahum.inventorytools.edit:
+    description: Access to the edit argument
     default: false
 
   # Inventory Clear Permissions
@@ -116,8 +128,14 @@ permissions:
   nahum.nahumstuff.restore:
     description: Access to the restore argument
     default: false
+  nahum.nahumstuff.undo:
+    description: Access to the undo argument
+    default: false
   nahum.nahumstuff.config:
     description: Access to the config argument
+    default: false
+  nahum.nahumstuff.config.see:
+    description: Access to the see all configs
     default: false
   nahum.nahumstuff.config.set:
     description: Allow the user to modify the config

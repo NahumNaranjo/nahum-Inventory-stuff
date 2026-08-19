@@ -44,3 +44,5 @@ pom.xml.next
 # Dependency directories
 lib/
 libs/
+
+/documentation

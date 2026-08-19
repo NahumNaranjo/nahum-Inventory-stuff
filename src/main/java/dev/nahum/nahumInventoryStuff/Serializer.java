@@ -28,10 +28,21 @@ public class Serializer {
     static final int ARMOR_START = 36;
     static final int OFFHAND_SLOT = 40;
 
-    public static World getWorld() {return Bukkit.getWorlds().getFirst();}
-    public static RegistryAccess getRegistry(){return ((CraftWorld) getWorld()).getHandle().registryAccess();}
-    public static RegistryFriendlyByteBuf getBuf(){return new RegistryFriendlyByteBuf(Unpooled.buffer(), getRegistry());}
-    public static RegistryOps getOps() { return getRegistry().createSerializationContext(JsonOps.INSTANCE);}
+    public static World getWorld() {
+        return Bukkit.getWorlds().getFirst();
+    }
+
+    public static RegistryAccess getRegistry() {
+        return ((CraftWorld) getWorld()).getHandle().registryAccess();
+    }
+
+    public static RegistryFriendlyByteBuf getBuf() {
+        return new RegistryFriendlyByteBuf(Unpooled.buffer(), getRegistry());
+    }
+
+    public static RegistryOps getOps() {
+        return getRegistry().createSerializationContext(JsonOps.INSTANCE);
+    }
 
     private static RegistryOps<net.minecraft.nbt.Tag> registryNbtOps() {
         return RegistryOps.create(NbtOps.INSTANCE, getRegistry());
@@ -55,28 +66,28 @@ public class Serializer {
         return CraftItemStack.asBukkitCopy(nmsItem);
     }
 
-    public static ListTag serializeToListTag(ItemStack[] itemStack, OfflinePlayer offlinePlayer){
+    public static ListTag serializeToListTag(ItemStack[] itemStack, OfflinePlayer offlinePlayer) {
         return serializeToListTag(itemStack, offlinePlayer == null ? "unknown" : offlinePlayer.getName());
     }
 
-    public static ListTag serializeToListTag(ItemStack[] itemStack){
+    public static ListTag serializeToListTag(ItemStack[] itemStack) {
         return serializeToListTag(itemStack, "unknown");
     }
 
-    public static CompoundTag serializeString(String message, String key){
+    public static CompoundTag serializeString(String message, String key) {
         CompoundTag tag = new CompoundTag();
         tag.putString(key, message);
         return tag;
     }
 
-    public static CompoundTag serializeArmorToCompoundTag(ItemStack[] itemStack){
+    public static CompoundTag serializeArmorToCompoundTag(ItemStack[] itemStack) {
         CompoundTag returning = new CompoundTag();
 
-        for(int i = 0; i < itemStack.length; i++){
-            try{
+        for (int i = 0; i < itemStack.length; i++) {
+            try {
                 ItemStack item = itemStack[i];
 
-                if(item == null || item.getType().isAir()){
+                if (item == null || item.getType().isAir()) {
                     continue;
                 }
 
@@ -88,29 +99,30 @@ public class Serializer {
                 EquipmentSlot defaultSlot = mat.getEquipmentSlot();
                 GoodLogger.debug("Slot is " + defaultSlot.name());
 
-                if(defaultSlot == EquipmentSlot.HEAD ){
+                if (defaultSlot == EquipmentSlot.HEAD) {
                     GoodLogger.debug("Slot was " + EquipmentSlot.HEAD.name());
                     returning.put(NbtTags.getHead(), tag);
-                } else if(defaultSlot == EquipmentSlot.CHEST ){
+                } else if (defaultSlot == EquipmentSlot.CHEST) {
                     GoodLogger.debug("Slot was " + EquipmentSlot.CHEST.name());
                     returning.put(NbtTags.getChest(), tag);
-                } else if(defaultSlot == EquipmentSlot.LEGS ){
+                } else if (defaultSlot == EquipmentSlot.LEGS) {
                     GoodLogger.debug("Slot was " + EquipmentSlot.LEGS.name());
                     returning.put(NbtTags.getLegs(), tag);
-                }else if(defaultSlot == EquipmentSlot.FEET ){
+                } else if (defaultSlot == EquipmentSlot.FEET) {
                     GoodLogger.debug("Slot was " + EquipmentSlot.FEET.name());
                     returning.put(NbtTags.getFeet(), tag);
                 } else {
                     GoodLogger.debug("Slot was " + EquipmentSlot.OFF_HAND.name());
                     returning.put(NbtTags.getOffhand(), tag);
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return returning;
     }
-    private static ListTag serializeToListTag(ItemStack[] itemStack, String contextName){
+
+    private static ListTag serializeToListTag(ItemStack[] itemStack, String contextName) {
         ListTag listTag = new ListTag();
 
         for (int slot = 0; slot < itemStack.length; slot++) {
@@ -263,14 +275,14 @@ public class Serializer {
         playerTag.put(NbtTags.getEquipment(), serializeEquipmentCompound(fullInventory));
     }
 
-    public static Inventory deserializeToEchest(ListTag list, OfflinePlayer offlinePlayer){
+    public static Inventory deserializeToEchest(ListTag list, OfflinePlayer offlinePlayer) {
         Inventory inv = Bukkit.createInventory(null, InventoryType.ENDER_CHEST, "Inventory");
 
         for (int slot = 0; slot < list.size(); slot++) {
-            try{
+            try {
                 CompoundTag compoundTag = new CompoundTag();
 
-            } catch (Exception e){
+            } catch (Exception e) {
 
                 return inv;
             }
