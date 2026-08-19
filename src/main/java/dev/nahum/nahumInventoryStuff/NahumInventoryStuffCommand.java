@@ -16,12 +16,16 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class NahumInventoryStuffCommand implements TabExecutor {
-    private static String[] configNames = {
+    PlayerDataReader reader = new PlayerDataReader();
+    PlayerDataWriter writer = new PlayerDataWriter(reader);
+    BackupManager backup = new BackupManager(reader, writer);
+    SnapshotManager snapshot = new SnapshotManager(reader, writer);
+    private String[] configNames = {
             "all", "autoBackup", "fixedMode", "lapse", "schedule", "onDebug", "maxDeathSnapshots",
             "maxJoinSnapshots", "maxLeaveSnapshots", "maxChangeSnapshots", "maxForcedSnapshots",
             "maxPlayers", "maxSnapshots", "autoDelete", "deleteOlderThan"
     };
-    private static String[] features = {
+    private String[] features = {
             "debug", "backup", "restore", "config", "undo"
     };
 
@@ -45,13 +49,13 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                         sender.sendMessage(ChatColor.RED + "Something went wrong. Check console");
                         return true;
                     }
-                    if (!FileManager.readBackup(name)) {
+                    if (!backup.readBackup(name)) {
                         sender.sendMessage(ChatColor.RED + "Something went wrong. Check console");
                     } else {
                         sender.sendMessage(ChatColor.GREEN + "Correctly restored backup.");
                     }
                 } else {
-                    if (!FileManager.readBackup(null)) {
+                    if (!backup.readBackup(null)) {
                         sender.sendMessage(ChatColor.RED + "Something went wrong. Check console");
                     } else {
                         sender.sendMessage(ChatColor.GREEN + "Correctly restored backup.");
@@ -64,13 +68,13 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                     return true;
                 }
                 GoodLogger.info(sender.getName() + " is trying to save a backup.");
-                Map<UUID, LinkedList<ListTag>> onlineUsers = FileManager.fetchAllOnlineUserData();
+                Map<UUID, LinkedList<ListTag>> onlineUsers = reader.fetchAllOnlineUserData();
                 List<UUID> uuids = new LinkedList<>();
                 boolean result;
                 if (args.length == 2) {
-                    result = FileManager.writeBackup(args[1], onlineUsers);
+                    result = backup.writeBackup(args[1], onlineUsers);
                 } else {
-                    result = FileManager.writeBackup(null, onlineUsers);
+                    result = backup.writeBackup(null, onlineUsers);
                 }
                 if (result) {
                     sender.sendMessage(ChatColor.GREEN + "Successfully saved backup.");
@@ -136,11 +140,11 @@ public class NahumInventoryStuffCommand implements TabExecutor {
                 }
                 if (args.length >= 2) {
                     OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-                    if(target == null) {
+                    if (target == null) {
                         sender.sendMessage(ChatColor.RED + "That player is not valid.");
                         return true;
                     }
-                    FileManager.loadAdminSnapshot(admin, target);
+                    writer.loadAdminSnapshot(admin, target);
                 }
 
                 break;

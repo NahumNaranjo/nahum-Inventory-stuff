@@ -6,7 +6,7 @@ import java.io.File;
 import java.util.UUID;
 
 public class PathManager {
-    private PathManager(){} // no instantiation for you >:(
+    private PathManager() {} // no instantiation for you >:(
 
     static public File getWorldDir() {
         return Bukkit.getWorlds().getFirst().getWorldFolder();

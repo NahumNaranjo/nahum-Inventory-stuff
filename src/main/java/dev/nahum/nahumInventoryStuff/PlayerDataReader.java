@@ -47,7 +47,6 @@ public class PlayerDataReader {
         Map<UUID, LinkedList<ListTag>> returning = new HashMap<>();
         GoodLogger.info("Fetching all user data...");
         int count = 0;
-        BackupManager backupManager = new BackupManager();
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             try {
                 LinkedList<ListTag> data = new LinkedList<>();
@@ -93,7 +92,7 @@ public class PlayerDataReader {
             }
 
             UUID uuid = player.getUniqueId();
-            CompoundTag tag = FileManager.getPlayerData(uuid);
+            CompoundTag tag = getPlayerData(uuid);
 
             if (tag == null) {
                 continue;
@@ -136,7 +135,7 @@ public class PlayerDataReader {
         GoodLogger.info("Fetching " + type + " user data...");
         for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
             ListTag listTag;
-            CompoundTag tag = FileManager.getPlayerData(player.getUniqueId());
+            CompoundTag tag = getPlayerData(player.getUniqueId());
             if (player.isOnline()) {
                 ItemStack[] contents;
                 if (type.equals(NbtTags.getEchest())) {

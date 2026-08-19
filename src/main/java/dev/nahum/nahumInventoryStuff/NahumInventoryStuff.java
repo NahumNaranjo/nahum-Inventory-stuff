@@ -1,7 +1,6 @@
 package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.ListTag;
-import org.apache.logging.log4j.core.pattern.PlainTextRenderer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -29,7 +28,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private static List<UUID> playerWatchList = new ArrayList<>();
     private static Map<UUID, UUID> isEditingList = new HashMap<>();
     private static Instant lastTimeBackuped;
-    private BackupManager  backupManager = new BackupManager();
+    private BackupManager backupManager = new BackupManager();
 
     public static String getCredits() {
         return "NahumInventoryStuff :D\n" +
@@ -107,7 +106,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                                 Files.deleteIfExists(path);
                             }
                             if (path.toFile().exists()) {
-                                LocalDate ageFromName = FileManager.getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
+                                LocalDate ageFromName = FileManager.getLocalDateFromFileName(path.toFile().getName().replace(".nahumbackup", ""));
                                 if (ageFromName.isBefore(maxAge)) {
                                     GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
                                     Files.deleteIfExists(path);

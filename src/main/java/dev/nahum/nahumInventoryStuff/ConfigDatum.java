@@ -16,19 +16,22 @@ public class ConfigDatum {
     private String path;
     private ConfigDatum parent;
     private Object value;
+    private Object defaultValue;
 
     ConfigDatum(String name) {
         this.name = name;
         this.path = null;
         this.value = null;
         this.parent = null;
+        this.defaultValue = null;
     }
 
-    ConfigDatum(String name, Object value) {
+    ConfigDatum(String name, Object value,  Object defaultValue) {
         this.name = name;
         this.path = null;
         this.value = value;
         this.parent = null;
+        this.defaultValue = defaultValue;
     }
 
     ConfigDatum(String name, ConfigDatum parent) {
@@ -36,6 +39,7 @@ public class ConfigDatum {
         this.path = null;
         this.value = null;
         this.parent = parent;
+        this.defaultValue = null;
     }
 
     ConfigDatum(String name, Object value, ConfigDatum parent) {
@@ -43,6 +47,24 @@ public class ConfigDatum {
         this.path = null;
         this.value = value;
         this.parent = parent;
+        this.defaultValue = null;
+    }
+    ConfigDatum(String name, Object value, Object defaultValue, ConfigDatum parent) {
+        this.name = name;
+        this.path = null;
+        if(value != null) {
+            this.value = value;
+        }
+        this.parent = parent;
+        this.defaultValue = defaultValue;
+    }
+
+    ConfigDatum(String name, Object value, ConfigDatum parent, Object defaultValue) {
+        this.name = name;
+        this.path = null;
+        this.value = value;
+        this.parent = parent;
+        this.defaultValue = defaultValue;
     }
 
     public String getName() {
@@ -80,6 +102,10 @@ public class ConfigDatum {
 
     public void setValue(Object value) {
         this.value = value;
+    }
+
+    public Object getDefaultValue() {
+        return this.defaultValue;
     }
 
     public LocalTime getParsedSchedule(String value) {

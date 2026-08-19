@@ -21,8 +21,8 @@ public class BackupManager {
     public PlayerDataWriter writer;
 
     BackupManager(PlayerDataReader reader, PlayerDataWriter writer) {
-        this.reader = Objects.requireNonNull(reader, "reader cannot be null");
-        this.writer = Objects.requireNonNull(writer, "writer cannot be null");
+        this.reader = Objects.requireNonNull(reader, this.getClass().getName() + ": reader cannot be null");
+        this.writer = Objects.requireNonNull(writer, this.getClass().getName() + ": writer cannot be null");
     }
 
     private File getLastBackup() {
@@ -68,7 +68,7 @@ public class BackupManager {
             newBackup = new File(folder.toPath().toString(), name + ".nahumbackup");
         }
 
-        Map<UUID, LinkedList<ListTag>> toWrite = PlayerDataReader.fetchAllOfflineUserData(onlineUsers);
+        Map<UUID, LinkedList<ListTag>> toWrite = reader.fetchAllOfflineUserData(onlineUsers);
 
         CompoundTag rootTag = new CompoundTag();
 
@@ -104,7 +104,7 @@ public class BackupManager {
         }
 
         try {
-            CompoundTag rootTag = NbtIo.readCompressed(backupFile.toPath(), ACCOUNTER);
+            CompoundTag rootTag = NbtIo.readCompressed(backupFile.toPath(), reader.getAccounter());
 
             for (String uuidString : rootTag.keySet()) {
                 UUID uuid = UUID.fromString(uuidString);
@@ -139,11 +139,11 @@ public class BackupManager {
                         continue;
                     }
 
-                    File playerFile = getPlayerFile(uuid);
+                    File playerFile = PathManager.getPlayerFile(uuid);
                     CompoundTag existingPlayerTag;
 
                     if (playerFile.exists()) {
-                        existingPlayerTag = NbtIo.readCompressed(playerFile.toPath(), ACCOUNTER);
+                        existingPlayerTag = NbtIo.readCompressed(playerFile.toPath(), reader.getAccounter());
                     } else {
                         existingPlayerTag = new CompoundTag();
                     }

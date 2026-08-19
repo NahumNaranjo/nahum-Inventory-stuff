@@ -1,6 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -333,6 +334,27 @@ public class ConfigManager {
             }
         }
         return null;
+    }
+
+    public static Object getConfigOrDefault(String name, Object def) {
+        Object val = getConfig(name);
+        if (val == null &&  def == null) {
+            ConfigDatum datum = getConfigDatum(name);
+            if(datum == null){
+                throw  new RuntimeException(
+                        "Error getting " + name +
+                                ". Check your config name and please, place a " +
+                                "default value when using ConfigManager.getConfigOrDefault()."
+                );
+            }
+            return datum.getDefaultValue();
+        }
+
+        if(val == null || def != null) {
+            return def;
+        }
+
+        return val;
     }
 
     public static ConfigDatum getConfigDatum(String name) {
