@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 public class GoodLogger {
+    public static Logger logger = getLogger();
     public static final String RESET = "\u001B[0m";
     public static final String RED = "\u001B[31m";
     public static final String GREEN = "\u001B[32m";
@@ -20,7 +21,6 @@ public class GoodLogger {
     public static final String[] Colors = new String[]{
             RESET, RED, ORANGE, GREEN, YELLOW, BLUE, LIGHTBLUE,
     };
-    public static Logger logger = getLogger();
 
     private static Logger getLogger() {
         return NahumInventoryStuff.getInstance() != null ? NahumInventoryStuff.getInstance().getLogger() : Bukkit.getLogger();
@@ -31,27 +31,21 @@ public class GoodLogger {
         return logger;
     }
 
-    public static void info(String message) {
+    public static void info(String message){
         logger.info(BLUE + message + RESET);
     }
 
-    public static void warn(String message) {
+    public static void warn(String message){
         logger.warning(YELLOW + message + RESET);
     }
 
-    public static void error(String message) {
+    public static void error(String message){
         logger.warning(RED + message + RESET);
     }
+    public static void severe(String message){error(message);}
+    public static void severe(String message, Throwable t){error(message, t);}
 
-    public static void severe(String message) {
-        error(message);
-    }
-
-    public static void severe(String message, Throwable t) {
-        error(message, t);
-    }
-
-    public static void error(String message, Throwable throwable) {
+    public static void error(String message, Throwable throwable){
         error(message);
         if (throwable != null) {
             error("Exception: " + throwable.getClass().getSimpleName() + " -> " + throwable.getMessage());
@@ -59,25 +53,25 @@ public class GoodLogger {
         }
     }
 
-    public static void success(String message) {
+    public static void success(String message){
         logger.info(GREEN + message + RESET);
     }
 
-    public static void debug(String message) {
-        if (NahumInventoryStuff.getOnDebug()) {
+    public static void debug(String message){
+        if(NahumInventoryStuff.getOnDebug()){
             logger.info(ORANGE + "DEBUG: " + message + RESET);
         }
     }
 
-    public static void debugSection(String title) {
+    public static void debugSection(String title){
         debug("=== " + title + " ===");
     }
 
-    public static void action(String message) {
+    public static void action(String message){
         info("[Action] " + message);
     }
 
-    public static void debugPlayer(String context, OfflinePlayer player) {
+    public static void debugPlayer(String context, OfflinePlayer player){
         if (!NahumInventoryStuff.getOnDebug() || player == null) {
             return;
         }
@@ -87,7 +81,7 @@ public class GoodLogger {
                 + " playedBefore=" + player.hasPlayedBefore());
     }
 
-    public static void debugFile(String context, File file) {
+    public static void debugFile(String context, File file){
         if (!NahumInventoryStuff.getOnDebug() || file == null) {
             return;
         }
@@ -96,14 +90,14 @@ public class GoodLogger {
                 + " size=" + (file.exists() ? file.length() + "B" : "n/a"));
     }
 
-    public static String summarizeItem(ItemStack item) {
+    public static String summarizeItem(ItemStack item){
         if (item == null || item.getType().isAir()) {
             return "air";
         }
         return item.getType().name() + "x" + item.getAmount();
     }
 
-    public static void debugItemStacks(String label, ItemStack[] items) {
+    public static void debugItemStacks(String label, ItemStack[] items){
         if (!NahumInventoryStuff.getOnDebug() || items == null) {
             return;
         }
@@ -126,7 +120,7 @@ public class GoodLogger {
         debug(builder.toString());
     }
 
-    public static void debugListTag(String label, ListTag listTag) {
+    public static void debugListTag(String label, ListTag listTag){
         if (!NahumInventoryStuff.getOnDebug()) {
             return;
         }
@@ -144,7 +138,7 @@ public class GoodLogger {
         }
     }
 
-    public static void sendMessage(String message, String mode) {
+    public static void sendMessage(String message, String mode){
         StringBuilder builder = new StringBuilder();
         String[] tokens = message.split(" /d ");
         for (String token : tokens) {
@@ -169,8 +163,8 @@ public class GoodLogger {
         }
     }
 
-    public static String getColor(String message) {
-        switch (message.toLowerCase()) {
+    public static String getColor(String message){
+        switch(message.toLowerCase()){
             case "red":
                 return RED;
             case "blue":

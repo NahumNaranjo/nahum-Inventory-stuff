@@ -1,7 +1,6 @@
 package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.configuration.file.FileConfiguration;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,7 +17,7 @@ public class ConfigManager {
     private static ConfigDatum fixedMode = new ConfigDatum("fixedMode", backup);
     private static ConfigDatum lapse = new ConfigDatum("lapse", backup);
     private static ConfigDatum schedule = new ConfigDatum("schedule", backup);
-    private static ConfigDatum deleteOlderThan = new ConfigDatum("deleteOlderThan", backup);
+    private static ConfigDatum deleteOlderThan = new ConfigDatum("deleteOlderThan",  backup);
 
     // <editor-fold desc="Snapshots">
     private static ConfigDatum snapshotSettings = new ConfigDatum("snapshotSettings", backup);
@@ -52,16 +51,8 @@ public class ConfigManager {
         return schedule.getValue() != null ? schedule.getValue().toString() : null;
     }
 
-    public static void setSchedule(String schedule) {
-        ConfigManager.schedule.setValue(schedule);
-    }
-
     public static String getLapse() {
         return lapse.getValue() != null ? lapse.getValue().toString() : null;
-    }
-
-    public static void setLapse(String lapse) {
-        ConfigManager.lapse.setValue(lapse);
     }
 
     public static LocalDate getMaxAge(String lapse) {
@@ -77,11 +68,7 @@ public class ConfigManager {
     }
 
     public static boolean isFixedMode() {
-        return fixedMode.getValue() != null ? (Boolean) fixedMode.getValue() : false;
-    }
-
-    public static void setFixedMode(boolean fixedMode) {
-        ConfigManager.fixedMode.setValue(fixedMode);
+        return fixedMode.getValue() != null ? (Boolean)fixedMode.getValue() : false;
     }
 
     public static boolean hasAutoBackup() {
@@ -89,60 +76,36 @@ public class ConfigManager {
     }
 
     public static boolean hasAutoDelete() {
-        return (boolean) autoDelete.getValue();
+        return (boolean)autoDelete.getValue();
     }
 
     public static int getMaxDeathSnapshots() {
-        return maxDeathSnapshots.getValue() != null ? (Integer) maxDeathSnapshots.getValue() : 10;
-    }
-
-    public static void setMaxDeathSnapshots(int newMax) {
-        ConfigManager.maxDeathSnapshots.setValue(String.valueOf(newMax));
+        return maxDeathSnapshots.getValue() != null ? (Integer)maxDeathSnapshots.getValue() : 10;
     }
 
     public static int getMaxJoinSnapshots() {
-        return maxJoinSnapshots.getValue() != null ? (Integer) maxJoinSnapshots.getValue() : 10;
+        return maxJoinSnapshots.getValue() != null ? (Integer)maxJoinSnapshots.getValue() : 10;
+    }
+
+    public static int getMaxLeaveSnapshots() {
+        return maxLeaveSnapshots.getValue() != null ? (Integer)maxLeaveSnapshots.getValue() : 10;
+    }
+
+    public static int getMaxForcedSnapshots() {
+        return maxForcedSnapshots.getValue() != null ? (Integer)maxForcedSnapshots.getValue() : 10;
+    }
+
+    public static int getMaxPlayers() {
+        return maxPlayers.getValue() != null ? (Integer)maxPlayers.getValue() : 10;
+    }
+
+    public static int getMaxSnapshots() {
+        return maxSnapshots.getValue() != null ? (Integer)maxSnapshots.getValue() : 10;
     }
 
     // </editor-fold>
 
     // <editor-fold desc="Setters">
-
-    public static void setMaxJoinSnapshots(int newMax) {
-        ConfigManager.maxJoinSnapshots.setValue(String.valueOf(newMax));
-    }
-
-    public static int getMaxLeaveSnapshots() {
-        return maxLeaveSnapshots.getValue() != null ? (Integer) maxLeaveSnapshots.getValue() : 10;
-    }
-
-    public static void setMaxLeaveSnapshots(int newMax) {
-        ConfigManager.maxLeaveSnapshots.setValue(String.valueOf(newMax));
-    }
-
-    public static int getMaxForcedSnapshots() {
-        return maxForcedSnapshots.getValue() != null ? (Integer) maxForcedSnapshots.getValue() : 10;
-    }
-
-    public static void setMaxForcedSnapshots(int newMax) {
-        ConfigManager.maxForcedSnapshots.setValue(String.valueOf(newMax));
-    }
-
-    public static int getMaxPlayers() {
-        return maxPlayers.getValue() != null ? (Integer) maxPlayers.getValue() : 10;
-    }
-
-    public static void setMaxPlayers(int newMax) {
-        ConfigManager.maxPlayers.setValue(String.valueOf(newMax));
-    }
-
-    public static int getMaxSnapshots() {
-        return maxSnapshots.getValue() != null ? (Integer) maxSnapshots.getValue() : 10;
-    }
-
-    public static void setMaxSnapshots(int newMax) {
-        ConfigManager.maxSnapshots.setValue(String.valueOf(newMax));
-    }
 
     public static void setAutoBackup(boolean autoBackup) {
         ConfigManager.autoBackup.setValue(autoBackup);
@@ -154,6 +117,42 @@ public class ConfigManager {
 
     public static void setMaxAge(String lapse) {
         deleteOlderThan.setValue(lapse);
+    }
+
+    public static void setMaxDeathSnapshots(int newMax) {
+        ConfigManager.maxDeathSnapshots.setValue(String.valueOf(newMax));
+    }
+
+    public static void setMaxJoinSnapshots(int newMax) {
+        ConfigManager.maxJoinSnapshots.setValue(String.valueOf(newMax));
+    }
+
+    public static void setMaxLeaveSnapshots(int newMax) {
+        ConfigManager.maxLeaveSnapshots.setValue(String.valueOf(newMax));
+    }
+
+    public static void setMaxForcedSnapshots(int newMax) {
+        ConfigManager.maxForcedSnapshots.setValue(String.valueOf(newMax));
+    }
+
+    public static void setMaxPlayers(int newMax) {
+        ConfigManager.maxPlayers.setValue(String.valueOf(newMax));
+    }
+
+    public static void setMaxSnapshots(int newMax) {
+        ConfigManager.maxSnapshots.setValue(String.valueOf(newMax));
+    }
+
+    public static void setFixedMode(boolean fixedMode) {
+        ConfigManager.fixedMode.setValue(fixedMode);
+    }
+
+    public static void setLapse(String lapse) {
+        ConfigManager.lapse.setValue(lapse);
+    }
+
+    public static void setSchedule(String schedule) {
+        ConfigManager.schedule.setValue(schedule);
     }
 
     public static void setOnDebug(boolean onDebug) {
@@ -171,9 +170,9 @@ public class ConfigManager {
     }
 
     public static boolean checkMaxAge(String lapse) {
-        try {
+        try{
             deleteOlderThan.getMaxAge(lapse);
-        } catch (Exception e) {
+        } catch(Exception e){
             return false;
         }
         return true;
@@ -211,7 +210,7 @@ public class ConfigManager {
                         }
                         break;
                     case "deleteOlderThan":
-                        if (checkLapseFormat(value.toString())) {
+                        if(checkLapseFormat(value.toString())) {
                             config.set(deleteOlderThan.getPath(), value);
                         } else {
                             GoodLogger.warn("Invalid format for deleteOlderThan: " + value);
@@ -220,9 +219,9 @@ public class ConfigManager {
                         break;
                     case "maxDeathSnapshots":
                         int max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxDeathSnapshots: " + value);
                             return;
                         }
@@ -230,9 +229,9 @@ public class ConfigManager {
                         break;
                     case "maxJoinSnapshots":
                         max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxJoinSnapshots: " + value);
                             return;
                         }
@@ -240,9 +239,9 @@ public class ConfigManager {
                         break;
                     case "maxLeaveSnapshots":
                         max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxLeaveSnapshots: " + value);
                             return;
                         }
@@ -250,9 +249,9 @@ public class ConfigManager {
                         break;
                     case "maxForcedSnapshots":
                         max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxForcedSnapshots: " + value);
                             return;
                         }
@@ -260,9 +259,9 @@ public class ConfigManager {
                         break;
                     case "maxPlayers":
                         max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxPlayers: " + value);
                             return;
                         }
@@ -270,9 +269,9 @@ public class ConfigManager {
                         break;
                     case "maxSnapshots":
                         max = 0;
-                        try {
-                            max = Integer.parseInt(value.toString());
-                        } catch (Exception e) {
+                        try{
+                            max =  Integer.parseInt(value.toString());
+                        } catch (Exception e){
                             GoodLogger.warn("Invalid format for maxSnapshots: " + value);
                             return;
                         }
@@ -358,9 +357,5 @@ public class ConfigManager {
             map.put(d.getPath(), d.getValue() != null ? d.getValue().toString() : "null");
         }
         return map;
-    }
-
-    public static String getType() {
-        return "null";
     }
 }

@@ -8,16 +8,36 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ConfigDatum {
-    private static final Pattern DURATION_PATTERN =
-            Pattern.compile("(?:(\\d+(?:\\.\\d+)?)\\s*d(?:ays?)?)?\\s*" +  // Days (optional)
-                    "(?:(\\d+(?:\\.\\d+)?)\\s*h(?:ours?)?)?\\s*" +   // Hours (optional)
-                    "(?:(\\d+(?:\\.\\d+)?)\\s*m(?:in(?:utes?)?)?)?"); // Minutes (optional)
     private String name;
     private String path;
     private ConfigDatum parent;
     private Object value;
+    private static final Pattern DURATION_PATTERN =
+            Pattern.compile("(?:(\\d+(?:\\.\\d+)?)\\s*d(?:ays?)?)?\\s*" +  // Days (optional)
+                    "(?:(\\d+(?:\\.\\d+)?)\\s*h(?:ours?)?)?\\s*" +   // Hours (optional)
+                    "(?:(\\d+(?:\\.\\d+)?)\\s*m(?:in(?:utes?)?)?)?"); // Minutes (optional)
 
-    ConfigDatum(String name) {
+    public String getName() {return name;}
+    public String getPath() {
+        if(this.path == null) {
+            StringBuilder parts = new StringBuilder(this.name);
+            ConfigDatum parent = this.parent;
+            while(parent != null){
+                parts.insert(0, parent.name + ".");
+                parent = parent.parent;
+            }
+            this.path = parts.toString();
+            return parts.toString();
+        } else return this.path;
+    }
+    public ConfigDatum getParent() {return parent;}
+    public Object getValue() {return value;}
+
+    public void setName(String name) {this.name = name;}
+    public void setParent(ConfigDatum parent) {this.parent = parent;}
+    public void setValue(Object value) {this.value = value;}
+
+    ConfigDatum(String name){
         this.name = name;
         this.path = null;
         this.value = null;
@@ -45,49 +65,12 @@ public class ConfigDatum {
         this.parent = parent;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPath() {
-        if (this.path == null) {
-            StringBuilder parts = new StringBuilder(this.name);
-            ConfigDatum parent = this.parent;
-            while (parent != null) {
-                parts.insert(0, parent.name + ".");
-                parent = parent.parent;
-            }
-            this.path = parts.toString();
-            return parts.toString();
-        } else return this.path;
-    }
-
-    public ConfigDatum getParent() {
-        return parent;
-    }
-
-    public void setParent(ConfigDatum parent) {
-        this.parent = parent;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
-    public LocalTime getParsedSchedule(String value) {
-        if ((Boolean) ConfigManager.getConfig("fixedMode") == false) {
+    public LocalTime getParsedSchedule(String value){
+        if((Boolean)ConfigManager.getConfig("fixedMode") == false){
             return null;
         }
 
-        if (value == null) {
+        if(value == null){
             value = this.value.toString();
         }
 
@@ -119,7 +102,6 @@ public class ConfigDatum {
         GoodLogger.warn("Invalid schedule format: " + value);
         return null;
     }
-
     public Duration getParsedLapse(String value) {
         if ((Boolean) ConfigManager.getConfig("fixedMode") == true) {
             return null;
@@ -167,7 +149,7 @@ public class ConfigDatum {
     }
 
     public LocalDate getMaxAge(String lapse) {
-        if (lapse == null) {
+        if(lapse == null) {
             lapse = this.value.toString();
         }
         lapse = lapse.replaceAll("d|days|day", "");

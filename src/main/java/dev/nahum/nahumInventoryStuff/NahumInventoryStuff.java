@@ -1,7 +1,6 @@
 package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.ListTag;
-import org.apache.logging.log4j.core.pattern.PlainTextRenderer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -17,111 +16,63 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-
 //TODO: custom inventories/inventory states
 //      custom ui engine
 public final class NahumInventoryStuff extends JavaPlugin {
 
     private final static String date = "14/August/26";
-    public static boolean onDebug = false;
     private static NahumInventoryStuff plugin;
     private static List<UUID> adminWatchList = new ArrayList<>();
     private static List<UUID> playerWatchList = new ArrayList<>();
     private static Map<UUID, UUID> isEditingList = new HashMap<>();
     private static Instant lastTimeBackuped;
-    private BackupManager  backupManager = new BackupManager();
 
-    public static String getCredits() {
+    public static boolean onDebug = false;
+
+    public static String getCredits(){
         return "NahumInventoryStuff :D\n" +
                 "Author: Nahum Naranjo\n" +
                 "Version: " + UpdateChecker.getCurrentVersion() + "\n" +
                 "Date of publishing: " + date;
     }
+    static public NahumInventoryStuff getInstance() {return plugin;}
+    static public Logger getLog() {return GoodLogger.getLog();}
+    static public Logger getGoodLogger() {return plugin != null ? plugin.getLogger() : Bukkit.getLogger();}
+    static public boolean getOnDebug() {return onDebug;}
+    static public void setOnDebug(boolean newDebug) {onDebug = newDebug;}
 
-    static public NahumInventoryStuff getInstance() {
-        return plugin;
-    }
-
-    static public Logger getLog() {
-        return GoodLogger.getLog();
-    }
-
-    static public Logger getGoodLogger() {
-        return plugin != null ? plugin.getLogger() : Bukkit.getLogger();
-    }
-
-    static public boolean getOnDebug() {
-        return onDebug;
-    }
-
-    static public void setOnDebug(boolean newDebug) {
-        onDebug = newDebug;
-    }
-
-    static public boolean isOnAdminWatchList(Object object) {
+    static public boolean isOnAdminWatchList(Object object){
         return adminWatchList.contains(DataParser.getUuidFromObject(object));
     }
 
-    static public void addToAdminWatchList(Object object) {
+    static public void addToAdminWatchList(Object object){
         adminWatchList.add(DataParser.getUuidFromObject(object));
     }
-
-    static public void removeFromAdminWatchList(Object object) {
+    static public void removeFromAdminWatchList(Object object){
         adminWatchList.remove(DataParser.getUuidFromObject(object));
     }
 
-    static public boolean isOnIsEditingList(Object object) {
+    static public boolean isOnIsEditingList(Object object){
         return isEditingList.containsKey(DataParser.getUuidFromObject(object));
     }
 
-    static public void addToIsEditingList(Object admin, Object victim) {
+    static public void addToIsEditingList(Object admin, Object victim){
         isEditingList.put(DataParser.getUuidFromObject(admin), DataParser.getUuidFromObject(victim));
     }
 
-    static public UUID getVictimFromIsEditingList(Object admin) {
+    static public UUID getVictimFromIsEditingList(Object admin){
         return isEditingList.get(DataParser.getUuidFromObject(admin));
     }
 
-    static public void removeFromIsEditingList(Object admin, Object victim) {
-        if (victim == null) {
+    static public void removeFromIsEditingList(Object admin, Object victim){
+        if(victim == null) {
             isEditingList.remove(DataParser.getUuidFromObject(admin), getVictimFromIsEditingList(admin));
             return;
         }
         isEditingList.remove(DataParser.getUuidFromObject(admin), DataParser.getUuidFromObject(victim));
     }
 
-    public static void deleteOldBackups(File folder) {
-        LocalDate maxAge = ConfigManager.getMaxAge(null);
-        try (Stream<Path> stream = Files.list(folder.toPath())) {
-            stream.filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        try {
-                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 
-                            LocalDate age = attr.creationTime().toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate();
-
-                            if (age.isBefore(maxAge)) {
-                                GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
-                                Files.deleteIfExists(path);
-                            }
-                            if (path.toFile().exists()) {
-                                LocalDate ageFromName = FileManager.getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
-                                if (ageFromName.isBefore(maxAge)) {
-                                    GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
-                                    Files.deleteIfExists(path);
-                                }
-                            }
-                            GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
-                        } catch (IOException e) {
-                            System.err.println("Could not read attributes for: " + path.getFileName());
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Error reading directory: " + e.getMessage());
-        }
-    }
 
     @Override
     public void onEnable() {
@@ -132,10 +83,10 @@ public final class NahumInventoryStuff extends JavaPlugin {
         int pluginBStatsID = 33407;
         Metrics metrics = new Metrics(getInstance(), pluginBStatsID);
 
-        if (ConfigManager.getConfig("onDebug") == null) {
+        if(ConfigManager.getConfig("onDebug") ==  null){
             onDebug = false;
         } else {
-            onDebug = (Boolean) ConfigManager.getConfig("onDebug");
+            onDebug = (Boolean)ConfigManager.getConfig("onDebug");
         }
 
         GoodLogger.info("Debug mode: " + (onDebug ? "ON" : "OFF") + " (toggle with /nahumstuff debug)");
@@ -164,11 +115,11 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 if (result != true) {
                     GoodLogger.info(
                             "\nA new NahumInventoryStuff version is available!\n" +
-                                    "Current version: " + UpdateChecker.getCurrentVersion() + "\n" +
-                                    "Newest version: " + UpdateChecker.getLatestVersion() + "\n" +
-                                    "Updating is recommended ;D\n" +
-                                    "Download links: \n" +
-                                    UpdateChecker.getAvailableLinks()
+                            "Current version: " + UpdateChecker.getCurrentVersion() + "\n" +
+                            "Newest version: " + UpdateChecker.getLatestVersion() + "\n" +
+                            "Updating is recommended ;D\n" +
+                            "Download links: \n" +
+                            UpdateChecker.getAvailableLinks()
                     );
                 } else {
                     GoodLogger.info("Loaded: " + UpdateChecker.getCurrentVersion());
@@ -219,7 +170,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 GoodLogger.debug("--- Fixed Mode Check ---");
 
                 if (ConfigManager.hasAutoDelete()) {
-                    deleteOldBackups(PathManager.getBackupFolder());
+                    deleteOldBackups(FileManager.getBackupFolder());
                 }
                 LocalTime now = LocalTime.now();
                 LocalTime scheduled = ConfigManager.getParsedSchedule();
@@ -252,7 +203,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                     if (lastBackupDate.isBefore(today)) {
                         GoodLogger.info("✓ Performing scheduled backup at " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
                         if (ConfigManager.hasAutoDelete()) {
-                            deleteOldBackups(PathManager.getBackupFolder());
+                            deleteOldBackups(FileManager.getBackupFolder());
                         }
                         performBackup();
                         lastTimeBackuped = Instant.now();
@@ -304,7 +255,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                             formatDuration(elapsedSeconds) + " / interval: " +
                             formatDuration(intervalSeconds) + ")");
                     if (ConfigManager.hasAutoDelete()) {
-                        deleteOldBackups(PathManager.getBackupFolder());
+                        deleteOldBackups(FileManager.getBackupFolder());
                     }
                     performBackup();
                     lastTimeBackuped = Instant.now();
@@ -334,15 +285,48 @@ public final class NahumInventoryStuff extends JavaPlugin {
         }.runTaskTimer(getInstance(), 0L, 20L);
     }
 
+    public static void deleteOldBackups(File folder) {
+        LocalDate maxAge = ConfigManager.getMaxAge(null);
+        try (Stream<Path> stream = Files.list(folder.toPath())) {
+            stream.filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+
+                            LocalDate age = attr.creationTime().toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+
+                            if(age.isBefore(maxAge)) {
+                                GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
+                                Files.deleteIfExists(path);
+                            }
+                            if(path.toFile().exists()) {
+                                LocalDate ageFromName = FileManager.getAgeFromName(path.toFile().getName().replace(".nahumbackup", ""));
+                                if(ageFromName.isBefore(maxAge)) {
+                                    GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
+                                    Files.deleteIfExists(path);
+                                }
+                            }
+                            GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
+                        } catch (IOException e) {
+                            System.err.println("Could not read attributes for: " + path.getFileName());
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("Error reading directory: " + e.getMessage());
+        }
+    }
+
     @Override
     public void onDisable() {
         ConfigManager.save();
     }
 
 
-    public void performBackup() {
+    public void performBackup(){
         GoodLogger.info("Performing backup...");
-        Map<UUID, LinkedList<ListTag>> onlineUsers = PlayerDataReader.fetchAllOnlineUserData();
-        backupManager.writeBackup(null, onlineUsers);
+        Map<UUID, LinkedList<ListTag>> onlineUsers = FileManager.fetchAllOnlineUserData();
+        FileManager.writeBackup(null, onlineUsers);
     }
 }
