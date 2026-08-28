@@ -17,12 +17,16 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class SnapshotManager {
-    private PlayerDataReader reader;
-    private PlayerDataWriter writer;
+    private final PlayerDataReader reader;
+    private final PlayerDataWriter writer;
 
     SnapshotManager(PlayerDataReader reader, PlayerDataWriter writer) {
         this.reader = Objects.requireNonNull(reader, this.getClass().getName() + ": reader cannot be null.");
         this.writer = Objects.requireNonNull(writer, this.getClass().getName() + ": writer cannot be null.");
+    }
+    SnapshotManager() {
+        this.reader = new PlayerDataReader();
+        this.writer = new PlayerDataWriter(this.reader);
     }
 
 

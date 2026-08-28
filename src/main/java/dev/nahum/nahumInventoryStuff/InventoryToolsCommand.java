@@ -1,6 +1,5 @@
 package dev.nahum.nahumInventoryStuff;
 
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -14,6 +13,9 @@ public class InventoryToolsCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        InvTools invTools = new InvTools(sender);
+        SenderLogger toSender = new SenderLogger(sender);
+
         if (args.length == 0) {
             return false;
         }
@@ -25,112 +27,113 @@ public class InventoryToolsCommand implements TabExecutor {
         }
 
         // Commands requiring at least 2 arguments
-        if (args.length >= 2) {
-            String option = args[0].toLowerCase();
-            String targetName = args[1];
+        String option = args[0].toLowerCase();
+        String targetName = args[1];
 
-            // Check if target is online
-            OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName);
-            if (targetPlayer == null) {
-                return true;
-            }
+        Player viewer = null;
+        if(sender instanceof Player) {
+            viewer = (Player) sender;
+        }
 
-            switch (option) {
-                case "see":
-                    if (!sender.hasPermission("nahum.inventorytools.see") && !sender.hasPermission("nahum.inventorytools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (!(sender instanceof Player)) {
-                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
-                        return true;
-                    }
-
-                    Player viewer = (Player) sender;
-                    NahumInventoryStuff.addToAdminWatchList(viewer);
-                    seeInventory(targetPlayer, viewer, sender);
-                    GoodLogger.info(sender.getName() + " is looking at " +
-                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"see\"!");
-                    break;
-                case "edit":
-                    if (!sender.hasPermission("nahum.inventorytools.edit") && !sender.hasPermission("nahum.inventorytools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (!(sender instanceof Player)) {
-                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
-                        return true;
-                    }
-                    viewer = (Player) sender;
-                    NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
-                    GoodLogger.debug("Added " + viewer.getUniqueId() + " to is editing");
-                    editInventory(targetPlayer, viewer, sender);
-                    GoodLogger.info(sender.getName() + " is editing at " +
-                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"edit\"!");
-                    break;
-
-                case "transfer":
-                    if (!sender.hasPermission("nahum.inventorytools.transfer") && !sender.hasPermission("nahum.inventorytools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (args.length < 3) {
-                        sender.sendMessage(ChatColor.RED + "Usage: /inventorytools transfer <recipient> <giver>");
-                        return true;
-                    }
-
-                    OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(args[2]);
-                    if (giverPlayer == null) {
-                        sender.sendMessage(ChatColor.RED + "Couldn't get " + args[2] + "'s OfflinePlayer!");
-                        return true;
-                    }
-
-                    transferInventory(targetPlayer, giverPlayer, sender, (byte) 1);
-                    GoodLogger.info(sender.getName() + " transfered " +
-                            targetPlayer.getName() + "'s inventory to " + giverPlayer.getName() +
-                            "'s using the command /inventorytools with the argument \"transfer\"!");
-                    break;
-
-                case "clear":
-                    if (!sender.hasPermission("nahum.inventorytools.clear") && !sender.hasPermission("nahum.inventorytools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    cleanInventory(targetPlayer, sender);
-                    GoodLogger.info(sender.getName() + " has cleared " +
-                            targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"clear\"!");
-                    break;
-
-                case "swap":
-                    if (!sender.hasPermission("nahum.inventorytools.swap") && !sender.hasPermission("nahum.inventorytools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (args.length < 3) {
-                        sender.sendMessage(ChatColor.RED + "Usage: /inventorytools transfer <recipient> <giver>");
-                        return true;
-                    }
-                    OfflinePlayer swapPlayer = OfflinePlayerSync.getPlayer(args[2]);
-                    if (swapPlayer == null) {
-                        sender.sendMessage(ChatColor.RED + "Couldn't get " + args[2] + "'s OfflinePlayer!");
-                        return true;
-                    }
-                    transferInventory(targetPlayer, swapPlayer, sender, (byte) 0);
-                    GoodLogger.info(sender.getName() + " transfered " +
-                            targetPlayer.getName() + "'s inventory to " + swapPlayer.getName() +
-                            "'s using the command /inventorytools with the argument \"transfer\"!");
-                    return true;
-
-
-                default:
-                    sender.sendMessage(ChatColor.RED + "Unknown option: " + option);
-                    sender.sendMessage(ChatColor.RED + "Valid options: see, transfer, clear");
-                    return false;
-            }
+        // Check if target is online
+        OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName);
+        if (targetPlayer == null) {
             return true;
         }
 
-        return false;
+        switch (option) {
+            case "see":
+                if (!sender.hasPermission("nahum.inventorytools.see") && !sender.hasPermission("nahum.inventorytools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (viewer == null) {
+                    toSender.error("You must be a player to use this command!");
+                    return true;
+                }
+
+                NahumInventoryStuff.addToAdminWatchList(viewer);
+                invTools.seeInventory(targetPlayer, viewer);
+                GoodLogger.info(sender.getName() + " is looking at " +
+                        targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"see\"!");
+                break;
+            case "edit":
+                if (!sender.hasPermission("nahum.inventorytools.edit") && !sender.hasPermission("nahum.inventorytools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (viewer == null) {
+                    toSender.error("You must be a player to use this command!");
+                    return true;
+                }
+
+                NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
+                GoodLogger.debug("Added " + viewer.getUniqueId() + " to isEditing");
+                invTools.editInventory(targetPlayer, viewer);
+                GoodLogger.info(sender.getName() + " is editing at " +
+                        targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"edit\"!");
+                break;
+
+            case "transfer":
+                if (!sender.hasPermission("nahum.inventorytools.transfer") && !sender.hasPermission("nahum.inventorytools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (args.length < 3) {
+                    toSender.error("Usage: /inventorytools transfer <recipient> <giver>");
+                    return true;
+                }
+
+                OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(args[2]);
+                if (giverPlayer == null) {
+                    toSender.error("Couldn't get " + args[2] + "'s OfflinePlayer!");
+                    return true;
+                }
+
+                invTools.transferInventory(targetPlayer, giverPlayer);
+                GoodLogger.info(sender.getName() + " transfered " +
+                        targetPlayer.getName() + "'s inventory to " + giverPlayer.getName() +
+                        "'s using the command /inventorytools with the argument \"transfer\"!");
+                break;
+
+            case "clear":
+                if (!sender.hasPermission("nahum.inventorytools.clear") && !sender.hasPermission("nahum.inventorytools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                invTools.cleanInventory(targetPlayer);
+                GoodLogger.info(sender.getName() + " has cleared " +
+                        targetPlayer.getName() + "'s inventory using the command /inventorytools with the argument \"clear\"!");
+                break;
+
+            case "swap":
+                if (!sender.hasPermission("nahum.inventorytools.swap") && !sender.hasPermission("nahum.inventorytools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (args.length < 3) {
+                    toSender.error("Usage: /inventorytools transfer <recipient> <giver>");
+                    return true;
+                }
+                OfflinePlayer swapPlayer = OfflinePlayerSync.getPlayer(args[2]);
+                if (swapPlayer == null) {
+                    toSender.error("Couldn't get " + args[2] + "'s OfflinePlayer!");
+                    return true;
+                }
+                invTools.swapInventory(targetPlayer, swapPlayer);
+                GoodLogger.info(sender.getName() + " transfered " +
+                        targetPlayer.getName() + "'s inventory to " + swapPlayer.getName() +
+                        "'s using the command /inventorytools with the argument \"transfer\"!");
+                return true;
+
+
+            default:
+                toSender.warning("Unknown option: " + option);
+                toSender.warning("Valid options: see, transfer, clear");
+                return false;
+        }
+        return true;
+
     }
 
     @Override

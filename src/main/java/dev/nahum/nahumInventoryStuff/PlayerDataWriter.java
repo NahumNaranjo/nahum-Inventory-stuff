@@ -150,6 +150,10 @@ public class PlayerDataWriter {
 
     public void saveInventory(ItemStack[] contents, Object recipient) {
         UUID uuid = DataParser.getUuidFromObject(recipient);
+        if(uuid == null){
+            GoodLogger.warn("saveInventory: uuid is null");
+            return;
+        }
         File file = PathManager.getPlayerFile(uuid);
         CompoundTag tag = reader.getPlayerData(uuid);
 

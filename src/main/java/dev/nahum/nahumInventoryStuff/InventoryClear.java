@@ -1,6 +1,5 @@
 package dev.nahum.nahumInventoryStuff;
 
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,9 +8,12 @@ import org.bukkit.command.CommandSender;
 public class InventoryClear implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        SenderLogger toSender = new SenderLogger(sender);
+        InvTools invTools = new InvTools(sender);
+        EchestTools echestTools = new EchestTools(sender);
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "Usage: /inventoryclean <option> <username>");
-            sender.sendMessage(ChatColor.RED + "Options: all, echest, inventory");
+            toSender.warning("Usage: /inventoryclean <option> <username>");
+            toSender.warning("Options: all, echest, inventory");
             return true;
         }
 
@@ -31,12 +33,12 @@ public class InventoryClear implements CommandExecutor {
                 if (!sender.hasPermission("nahum.inventoryclear") &&
                         (!sender.hasPermission("nahum.inventorytools") && !sender.hasPermission("nahum.echesttools")) &&
                         (!sender.hasPermission("nahum.echesttools.clear") && !sender.hasPermission("nahum.inventorytools.clear"))) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    toSender.error("You do not have permission to use this command!");
                     return true;
                 }
-                InventoryToolsCommand.cleanInventory(targetPlayer, sender);
-                EchestToolsCommand.cleanEnderchest(targetPlayer, sender);
-                sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
+                invTools.cleanInventory(targetPlayer);
+                echestTools.cleanEnderchest(targetPlayer);
+                toSender.success("Successfully cleared all storage for " + playerDisplayName + "!");
                 GoodLogger.info(sender.getName() + " has cleared all of " +
                         playerDisplayName + "'s inventories using the command /inventoryclear!");
                 break;
@@ -45,10 +47,10 @@ public class InventoryClear implements CommandExecutor {
                 if (!sender.hasPermission("nahum.inventoryclear") &&
                         !sender.hasPermission("nahum.echesttools") &&
                         !sender.hasPermission("nahum.echesttools.clear")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    toSender.error("You do not have permission to use this command!");
                     return true;
                 }
-                EchestTools.cleanEnderchest(targetPlayer, sender);
+                echestTools.cleanEnderchest(targetPlayer);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         playerDisplayName + "'s enderchest using the command /inventoryclear!");
                 break;
@@ -57,17 +59,17 @@ public class InventoryClear implements CommandExecutor {
                 if (!sender.hasPermission("nahum.inventoryclear") &&
                         !sender.hasPermission("nahum.inventorytools") &&
                         !sender.hasPermission("nahum.inventorytools.clear")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    toSender.error("You do not have permission to use this command!");
                     return true;
                 }
-                InventoryToolsCommand.cleanInventory(targetPlayer, sender);
+                invTools.cleanInventory(targetPlayer);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         playerDisplayName + "'s inventory using the command /inventoryclear!");
                 break;
 
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown option: " + option);
-                sender.sendMessage(ChatColor.RED + "Valid options: all, echest, inventory");
+                toSender.warning("Unknown option: " + option);
+                toSender.warning("Valid options: all, echest, inventory");
                 return false;
         }
 

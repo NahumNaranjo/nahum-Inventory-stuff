@@ -24,13 +24,13 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private final static String date = "14/August/26";
     public static boolean onDebug = false;
     private static NahumInventoryStuff plugin;
-    private static List<UUID> adminWatchList = new ArrayList<>();
+    private static final List<UUID> adminWatchList = new ArrayList<>();
     private static List<UUID> playerWatchList = new ArrayList<>();
-    private static Map<UUID, UUID> isEditingList = new HashMap<>();
+    private static final Map<UUID, UUID> isEditingList = new HashMap<>();
     private static Instant lastTimeBackuped;
-    private PlayerDataReader reader = new PlayerDataReader();
-    private PlayerDataWriter writer = new PlayerDataWriter(reader);
-    private BackupManager backupManager = new BackupManager(reader, writer);
+    private final PlayerDataReader reader = new PlayerDataReader();
+    private final PlayerDataWriter writer = new PlayerDataWriter(reader);
+    private final BackupManager backupManager = new BackupManager(reader, writer);
 
     public static String getCredits() {
         return "NahumInventoryStuff :D\n" +
@@ -122,6 +122,14 @@ public final class NahumInventoryStuff extends JavaPlugin {
         } catch (IOException e) {
             System.err.println("Error reading directory: " + e.getMessage());
         }
+    }
+
+    public static List<UUID> getPlayerWatchList() {
+        return playerWatchList;
+    }
+
+    public static void setPlayerWatchList(List<UUID> playerWatchList) {
+        NahumInventoryStuff.playerWatchList = playerWatchList;
     }
 
     @Override

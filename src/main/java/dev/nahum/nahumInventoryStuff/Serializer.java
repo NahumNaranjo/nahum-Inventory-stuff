@@ -83,17 +83,16 @@ public class Serializer {
     public static CompoundTag serializeArmorToCompoundTag(ItemStack[] itemStack) {
         CompoundTag returning = new CompoundTag();
 
-        for (int i = 0; i < itemStack.length; i++) {
+        for (ItemStack stack : itemStack) {
             try {
-                ItemStack item = itemStack[i];
 
-                if (item == null || item.getType().isAir()) {
+                if (stack == null || stack.getType().isAir()) {
                     continue;
                 }
 
                 CompoundTag tag = new CompoundTag();
                 tag.putInt(NbtTags.getCount(), 1);
-                Material mat = item.getType();
+                Material mat = stack.getType();
                 String id = mat.getKey().toString();
                 tag.putString(NbtTags.getId(), id);
                 EquipmentSlot defaultSlot = mat.getEquipmentSlot();

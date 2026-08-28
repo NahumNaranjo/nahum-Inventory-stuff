@@ -99,6 +99,10 @@ public class InvTools {
     }
 
     // mode = 0 for swap, any other value will result in a transfer
+    public boolean transferInventory(OfflinePlayer recipient, OfflinePlayer giverPlayer){
+        return transferInventory(recipient, giverPlayer, (byte)1);
+    }
+
     public boolean swapInventory(OfflinePlayer recipient, OfflinePlayer giverPlayer){
         return transferInventory(recipient, giverPlayer, (byte)0);
     }
@@ -207,7 +211,6 @@ public class InvTools {
             inventory = targetPlayer.getPlayer().getInventory();
             performAdminBufferSave(targetPlayer, inventory, "edited");
             GoodLogger.debug(targetPlayer.getName() + " is editing " + targetPlayer.getName() + "'s inventory, snapshoted!");
-            NahumInventoryStuff.addToIsEditingList(viewer,  targetPlayer);
             viewer.openInventory(targetPlayer.getPlayer().getInventory());
         } else {
             try {
@@ -221,7 +224,6 @@ public class InvTools {
                 inventory.setContents(playerInv);
 
                 performAdminBufferSave(targetPlayer, playerInv, "edited");
-                NahumInventoryStuff.addToIsEditingList(viewer,  targetPlayer);
                 viewer.openInventory(inventory);
             } catch (Exception e) {
                 toSender.error(targetPlayer.getName() + "'s player data is not a valid file!");

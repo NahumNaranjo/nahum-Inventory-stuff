@@ -334,7 +334,7 @@ public class NahumInventoryStuffCommand implements TabExecutor {
     }
 
     public String getBackupFileName(String input) {
-        File backupFolder = FileManager.getBackupFolder();
+        File backupFolder = PathManager.getBackupFolder();
         if (backupFolder == null) {
             GoodLogger.error("Backup folder is null");
             return null;
