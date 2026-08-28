@@ -34,7 +34,7 @@ public class InventoryClear implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                     return true;
                 }
-                InventoryTools.cleanInventory(targetPlayer, sender);
+                InventoryToolsCommand.cleanInventory(targetPlayer, sender);
                 EchestToolsCommand.cleanEnderchest(targetPlayer, sender);
                 sender.sendMessage(ChatColor.GREEN + "Successfully cleared all storage for " + playerDisplayName + "!");
                 GoodLogger.info(sender.getName() + " has cleared all of " +
@@ -60,7 +60,7 @@ public class InventoryClear implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
                     return true;
                 }
-                InventoryTools.cleanInventory(targetPlayer, sender);
+                InventoryToolsCommand.cleanInventory(targetPlayer, sender);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         playerDisplayName + "'s inventory using the command /inventoryclear!");
                 break;

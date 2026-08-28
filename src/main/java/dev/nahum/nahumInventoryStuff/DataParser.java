@@ -1,7 +1,10 @@
 package dev.nahum.nahumInventoryStuff;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.nio.file.attribute.FileTime;
@@ -18,16 +21,16 @@ public class DataParser {
 
     public static UUID getUuidFromObject(Object object) {
         UUID uuid;
-        if (object instanceof Player player) {
-            uuid = player.getUniqueId();
-        } else if (object instanceof OfflinePlayer offlinePlayer) {
-            uuid = offlinePlayer.getUniqueId();
-        } else if (object instanceof UUID) {
-            return (UUID) object;
-        } else if (object instanceof String) {
-            uuid = UUID.fromString((String) object);
-        } else {
-            return null;
+        switch (object) {
+            case Player player -> uuid = player.getUniqueId();
+            case OfflinePlayer offlinePlayer -> uuid = offlinePlayer.getUniqueId();
+            case UUID uuid1 -> {
+                return uuid1;
+            }
+            case String s -> uuid = UUID.fromString(s);
+            case null, default -> {
+                return null;
+            }
         }
         return uuid;
     }
@@ -50,6 +53,17 @@ public class DataParser {
             }
         }
         return oldest;
+    }
+
+
+    public static ItemStack[] objectToItemStackArr(Object obj) {
+        return switch (obj) {
+            case ListTag tags -> Serializer.deserializeFromListTag(tags, Serializer.MAIN_INVENTORY_SIZE);
+            case CompoundTag compoundTag -> Serializer.buildFullInventoryFromPlayerTag(compoundTag);
+            case Inventory inventory -> inventory.getContents();
+            case ItemStack[] itemStacks -> itemStacks;
+            case null, default -> new ItemStack[0];
+        };
     }
 
 }

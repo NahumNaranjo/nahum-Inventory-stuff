@@ -16,13 +16,29 @@ import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 
 public class InventorySecurityWatcher implements Listener {
+    public PlayerDataReader reader;
+    public PlayerDataWriter writer;
+    public SnapshotManager manager;
+
+    public InventorySecurityWatcher(PlayerDataReader reader, PlayerDataWriter writer, SnapshotManager manager) {
+        this.reader = reader;
+        this.writer = writer;
+        this.manager = manager;
+    }
+
+    public InventorySecurityWatcher() {
+        this.reader = new PlayerDataReader();
+        this.writer = new PlayerDataWriter(this.reader);
+        this.manager = new SnapshotManager(this.reader, this.writer);
+    }
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         ItemStack[] inv = e.getEntity().getPlayer().getInventory().getContents();
         ItemStack[] ec = e.getEntity().getPlayer().getEnderChest().getContents();
         String deathMessage = e.getDeathMessage();
         GoodLogger.debug(e.getEntity().getPlayer().getName() + " died, snapshotting with message: " + deathMessage);
-        FileManager.performPlayerSaveSnapshot(e.getEntity().getPlayer(), inv, ec, deathMessage, "maxDeathSnapshots");
+        manager.performPlayerSaveSnapshot(e.getEntity().getPlayer(), inv, ec, deathMessage, "maxDeathSnapshots");
     }
 
     @EventHandler
@@ -31,7 +47,7 @@ public class InventorySecurityWatcher implements Listener {
         ItemStack[] ec = e.getPlayer().getEnderChest().getContents();
         String joinMessage = e.getJoinMessage();
         GoodLogger.debug(e.getPlayer().getName() + " joined, snapshotting with message: " + joinMessage);
-        FileManager.performPlayerSaveSnapshot(e.getPlayer().getPlayer(), inv, ec, joinMessage, "maxJoinSnapshots");
+        manager.performPlayerSaveSnapshot(e.getPlayer().getPlayer(), inv, ec, joinMessage, "maxJoinSnapshots");
     }
 
     @EventHandler
@@ -40,7 +56,7 @@ public class InventorySecurityWatcher implements Listener {
         ItemStack[] ec = e.getPlayer().getEnderChest().getContents();
         String quitMessage = e.getQuitMessage();
         GoodLogger.debug(e.getPlayer().getName() + " joined, snapshotting with message: " + quitMessage);
-        FileManager.performPlayerSaveSnapshot(e.getPlayer().getPlayer(), inv, ec, quitMessage, "maxJoinSnapshots");
+        manager.performPlayerSaveSnapshot(e.getPlayer().getPlayer(), inv, ec, quitMessage, "maxJoinSnapshots");
     }
 
     @EventHandler
@@ -82,11 +98,11 @@ public class InventorySecurityWatcher implements Listener {
             GoodLogger.debug("was editing");
             if (event.getInventory().getType() == InventoryType.ENDER_CHEST) {
                 GoodLogger.debug("Closed echest");
-                FileManager.saveEchest(event.getInventory().getContents(), NahumInventoryStuff.getVictimFromIsEditingList(uuid));
+                writer.saveEchest(event.getInventory().getContents(), NahumInventoryStuff.getVictimFromIsEditingList(uuid));
                 GoodLogger.debug("saved echest");
             } else if (event.getInventory().getType() == InventoryType.PLAYER) {
                 GoodLogger.debug("Closed inventory");
-                FileManager.saveInventory(event.getInventory().getContents(), NahumInventoryStuff.getVictimFromIsEditingList(uuid));
+                writer.saveInventory(event.getInventory().getContents(), NahumInventoryStuff.getVictimFromIsEditingList(uuid));
                 GoodLogger.debug("saved inventory");
             }
             NahumInventoryStuff.removeFromIsEditingList(uuid, null);

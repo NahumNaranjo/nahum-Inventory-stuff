@@ -1,19 +1,22 @@
 package dev.nahum.nahumInventoryStuff;
 
 public class NbtTags {
-    private static String echest = "EnderItems";
-    private static String inventory = "Inventory";
-    private static String slot = "Slot";
-    private static String count = "count";
-    private static String id = "id";
-    private static String components = "components";
-    private static String equipment = "equipment";
-    private static String head = "head";
-    private static String chest = "chest";
-    private static String legs = "legs";
-    private static String feet = "feet";
-    private static String offhand = "offhand";
-    private static String[] armor = {head, feet, chest, legs, offhand};
+    private static final String echest = "EnderItems";
+    private static final String inventory = "Inventory";
+    private static final String slot = "Slot";
+    private static final String count = "count";
+    private static final String id = "id";
+    private static final String components = "components";
+    private static final String equipment = "equipment";
+    private static final String head = "head";
+    private static final String chest = "chest";
+    private static final String legs = "legs";
+    private static final String feet = "feet";
+    private static final String offhand = "offhand";
+    private static final String[] armor = {head, feet, chest, legs, offhand};
+    private static final String linkedTo = "linkedTo";
+
+    public static String getLinkedTo() {return linkedTo;}
 
     public static String getEchest() {
         return echest;

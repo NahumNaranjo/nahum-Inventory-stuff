@@ -93,7 +93,7 @@ public class BackupManager {
                         var onlinePlayer = player.getPlayer();
 
                         writer.pasteEchest(echestData, onlinePlayer);
-                        writer.pasteEchest(invData, onlinePlayer);
+                        writer.pasteInventory(invData, onlinePlayer);
                         continue;
                     }
 

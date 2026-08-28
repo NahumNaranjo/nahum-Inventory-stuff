@@ -10,16 +10,18 @@ import org.bukkit.entity.Player;
 public class InvCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        SenderLogger toSender = new  SenderLogger(sender);
+        InvTools tools = new InvTools(sender);
         Player viewer;
         if (sender instanceof Player) {
             viewer = (Player) sender;
         } else {
-            sender.sendMessage(ChatColor.RED + "Only players can use this command.");
+            toSender.error("Only players can use this command.");
             return true;
         }
         if (args.length == 0) {
             if (!sender.hasPermission("nahum.inv.self") && !sender.hasPermission("nahum.inv")) {
-                sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                toSender.error("You do not have permission to use this command.");
                 return true;
             }
             viewer.openInventory(viewer.getInventory());
@@ -29,38 +31,38 @@ public class InvCommand implements CommandExecutor {
         String option = args[0];
         if (args.length == 1) {
             if (!sender.hasPermission("nahum.inv.other") && !sender.hasPermission("nahum.inv")) {
-                sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                toSender.error("You do not have permission to use this command.");
                 return true;
             }
             OfflinePlayer offlinePlayer = OfflinePlayerSync.getPlayer(option);
             if (offlinePlayer != null) {
-                InventoryTools.seeInventory(offlinePlayer, viewer, sender);
+                tools.seeInventory(offlinePlayer, viewer);
                 return true;
             }
-            sender.sendMessage(ChatColor.RED + "That player does not exist.");
+            toSender.error("That player does not exist.");
             return true;
         }
         OfflinePlayer offlinePlayer = OfflinePlayerSync.getPlayer(args[1]);
         if (offlinePlayer == null) {
-            sender.sendMessage(ChatColor.RED + "That player does not exist.");
+            toSender.error("That player does not exist.");
             return true;
         }
         switch (option) {
             case "clear":
                 if (!sender.hasPermission("nahum.inv") && !sender.hasPermission("nahum.inventorytools.clear") && !sender.hasPermission("nahum.inventorytools")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    toSender.error("You do not have permission to use this command.");
                     return true;
                 }
                 if (!sender.hasPermission("nahum.invcommand.see") && !sender.hasPermission("nahum.inventorytools")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+                    toSender.error("You do not have permission to use this command!");
                     return true;
                 }
-                InventoryTools.cleanInventory(offlinePlayer, sender);
+                tools.cleanInventory(offlinePlayer);
                 GoodLogger.info(sender.getName() + " has cleared " +
                         offlinePlayer.getName() + "'s inventory using the command /inv with the argument \"clear\"!");
                 break;
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown option: " + option);
+                toSender.error("Unknown option: " + option);
                 return true;
         }
         return true;

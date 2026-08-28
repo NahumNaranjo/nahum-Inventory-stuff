@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDate;
@@ -12,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class FileManager {
@@ -135,14 +135,7 @@ public class FileManager {
     }
 
     public static File getOldestRegularFileFromName(List<File> contents) {
-        HashMap<LocalDateTime, File> files = new HashMap<>();
-        for (File file : contents) {
-            files.put(getLocalDateTimeFromFileName(file.getName()), file);
-        }
-        if (files.isEmpty()) return null;
-        List<LocalDateTime> dates = new ArrayList<>(files.keySet());
-
-        return files.get(DataParser.getOldestLocalDateTime(dates));
+        return getOldestFile(contents, file -> getLocalDateTimeFromFileName(file.getName()));
     }
 
     public static File getOldestRegularFileFromAtt(File folder) {
@@ -151,13 +144,7 @@ public class FileManager {
     }
 
     public static File getOldestRegularFileFromAtt(List<File> contents) {
-        HashMap<FileTime, File> files = new HashMap<>();
-        for (File file : contents) {
-           files.put(getBasicFileAttributes(file).lastModifiedTime(), file);
-        }
-        if(files.isEmpty()) return null;
-
-        return files.get(DataParser.getOldestFileTime(new ArrayList<>(files.keySet())));
+        return getOldestFile(contents, file -> getBasicFileAttributes(file).lastModifiedTime());
     }
 
     public static File getOldestFolderFromAtt(File folder) {
@@ -165,13 +152,21 @@ public class FileManager {
     }
 
     public static File getOldestFolderFromAtt(File folder, List<File> contents) {
-        HashMap<FileTime, File> files = new HashMap<>();
+        return getOldestFile(contents, file -> getBasicFileAttributes(file).lastModifiedTime());
+    }
+
+    private static <T extends Comparable<? super T>> File getOldestFile(
+            List<File> contents, Function<File, T> dateExtractor) {
+        Map<T, File> files = new HashMap<>();
         for (File file : contents) {
-            files.put(getBasicFileAttributes(file).lastModifiedTime(), file);
+            files.put(dateExtractor.apply(file), file);
         }
         if (files.isEmpty()) return null;
 
-        return files.get(DataParser.getOldestFileTime(new ArrayList<>(files.keySet())));
+        return files.entrySet().stream()
+                .min(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .orElse(null);
     }
 
     public static File getNewestFileFromAtt(String directoryPath) {

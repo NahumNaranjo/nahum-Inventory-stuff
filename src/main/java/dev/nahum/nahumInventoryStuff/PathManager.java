@@ -1,6 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 
 import java.io.File;
 import java.util.UUID;
@@ -25,7 +26,6 @@ public class PathManager {
     }
 
     static public File getSnapshotFolder() {
-        File f = new File(getDataFolder(), "snapshots");
         return FileManager.createFolder(getDataFolder().toString(), "snapshots");
     }
 
@@ -34,9 +34,7 @@ public class PathManager {
     }
 
     static public File getAdminFolder(Object player) {
-        if (player instanceof String) {
-            return FileManager.createFolder(getBufferFolder().toString(), "console");
-        } else if (player == null) {
+        if (player == null || player instanceof String || player instanceof CommandSender) {
             return FileManager.createFolder(getBufferFolder().toString(), "console");
         } else {
             return FileManager.createFolder(getBufferFolder().toString(), DataParser.getUuidFromObject(player).toString());

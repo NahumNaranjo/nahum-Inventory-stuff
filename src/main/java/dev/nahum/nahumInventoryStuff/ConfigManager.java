@@ -1,7 +1,6 @@
 package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.configuration.file.FileConfiguration;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -9,45 +8,37 @@ import java.time.LocalTime;
 import java.util.*;
 
 public class ConfigManager {
-    private static NahumInventoryStuff instance = NahumInventoryStuff.getInstance();
+    private static final NahumInventoryStuff instance = NahumInventoryStuff.getInstance();
     private static FileConfiguration config = instance.getConfig();
 
-    // <editor-fold desc="Backup settings">
-    private static ConfigDatum backup = new ConfigDatum("backupSettings");
-    private static ConfigDatum autoBackup = new ConfigDatum("autoBackup", backup);
-    private static ConfigDatum autoDelete = new ConfigDatum("autoDelete", backup);
-    private static ConfigDatum fixedMode = new ConfigDatum("fixedMode", backup);
-    private static ConfigDatum lapse = new ConfigDatum("lapse", backup);
-    private static ConfigDatum schedule = new ConfigDatum("schedule", backup);
-    private static ConfigDatum deleteOlderThan = new ConfigDatum("deleteOlderThan", backup);
+    private static final ConfigDatum backup = new ConfigDatum("backupSettings");
+    private static final ConfigDatum autoBackup = new ConfigDatum("autoBackup", backup);
+    private static final ConfigDatum autoDelete = new ConfigDatum("autoDelete", backup);
+    private static final ConfigDatum fixedMode = new ConfigDatum("fixedMode", backup);
+    private static final ConfigDatum lapse = new ConfigDatum("lapse", backup);
+    private static final ConfigDatum schedule = new ConfigDatum("schedule", backup);
+    private static final ConfigDatum deleteOlderThan = new ConfigDatum("deleteOlderThan", backup);
 
-    // <editor-fold desc="Snapshots">
-    private static ConfigDatum snapshotSettings = new ConfigDatum("snapshotSettings", backup);
+    private static final ConfigDatum snapshotSettings = new ConfigDatum("snapshotSettings", backup);
 
-    private static ConfigDatum playerSnapshots = new ConfigDatum("playerSnapshots", snapshotSettings);
-    private static ConfigDatum maxDeathSnapshots = new ConfigDatum("maxDeathSnapshots", playerSnapshots);
-    private static ConfigDatum maxJoinSnapshots = new ConfigDatum("maxJoinSnapshots", playerSnapshots);
-    private static ConfigDatum maxLeaveSnapshots = new ConfigDatum("maxLeaveSnapshots", playerSnapshots);
-    private static ConfigDatum maxForcedSnapshots = new ConfigDatum("maxForcedSnapshots", playerSnapshots);
+    private static final ConfigDatum playerSnapshots = new ConfigDatum("playerSnapshots", snapshotSettings);
+    private static final ConfigDatum maxDeathSnapshots = new ConfigDatum("maxDeathSnapshots", playerSnapshots);
+    private static final ConfigDatum maxJoinSnapshots = new ConfigDatum("maxJoinSnapshots", playerSnapshots);
+    private static final ConfigDatum maxLeaveSnapshots = new ConfigDatum("maxLeaveSnapshots", playerSnapshots);
+    private static final ConfigDatum maxForcedSnapshots = new ConfigDatum("maxForcedSnapshots", playerSnapshots);
 
-    private static ConfigDatum adminSnapshots = new ConfigDatum("adminSnapshots", snapshotSettings);
-    private static ConfigDatum maxPlayers = new ConfigDatum("maxPlayers", adminSnapshots);
-    private static ConfigDatum maxSnapshots = new ConfigDatum("maxSnapshots", adminSnapshots);
-    // </editor-fold>
-    // </editor-fold>
-    // <editor-fold desc="Debug Options">
-    private static ConfigDatum debug = new ConfigDatum("debug");
-    private static ConfigDatum onDebug = new ConfigDatum("onDebug", debug);
-    // </editor-fold>
+    private static final ConfigDatum adminSnapshots = new ConfigDatum("adminSnapshots", snapshotSettings);
+    private static final ConfigDatum maxPlayers = new ConfigDatum("maxPlayers", adminSnapshots);
+    private static final ConfigDatum maxSnapshots = new ConfigDatum("maxSnapshots", adminSnapshots);
+    private static final ConfigDatum debug = new ConfigDatum("debug");
+    private static final ConfigDatum onDebug = new ConfigDatum("onDebug", debug);
 
-    private static ConfigDatum[] data = {
+    private static final ConfigDatum[] data = {
             autoBackup, autoDelete, fixedMode, lapse, schedule, deleteOlderThan,
             maxDeathSnapshots, maxJoinSnapshots, maxLeaveSnapshots, maxForcedSnapshots,
             maxPlayers, maxSnapshots,
             onDebug
     };
-
-    // <editor-fold desc="Getters">
 
     public static String getSchedule() {
         return schedule.getValue() != null ? schedule.getValue().toString() : null;
@@ -105,10 +96,6 @@ public class ConfigManager {
         return maxJoinSnapshots.getValue() != null ? (Integer) maxJoinSnapshots.getValue() : 10;
     }
 
-    // </editor-fold>
-
-    // <editor-fold desc="Setters">
-
     public static void setMaxJoinSnapshots(int newMax) {
         ConfigManager.maxJoinSnapshots.setValue(String.valueOf(newMax));
     }
@@ -161,7 +148,6 @@ public class ConfigManager {
         ConfigManager.onDebug.setValue(onDebug);
     }
 
-    // </editor-fold>
 
     public static boolean checkLapseFormat(String lapse) {
         return backup.getParsedLapse(lapse) != null;
@@ -184,6 +170,7 @@ public class ConfigManager {
         for (ConfigDatum d : data) {
             if (d.getName().equals(name)) {
                 d.setValue(value);
+                int max = 0;
 
                 switch (name) {
                     case "autoBackup":
@@ -220,7 +207,6 @@ public class ConfigManager {
                         }
                         break;
                     case "maxDeathSnapshots":
-                        int max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -230,7 +216,6 @@ public class ConfigManager {
                         setMaxDeathSnapshots(max);
                         break;
                     case "maxJoinSnapshots":
-                        max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -240,7 +225,6 @@ public class ConfigManager {
                         setMaxJoinSnapshots(max);
                         break;
                     case "maxLeaveSnapshots":
-                        max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -250,7 +234,6 @@ public class ConfigManager {
                         setMaxLeaveSnapshots(max);
                         break;
                     case "maxForcedSnapshots":
-                        max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -260,7 +243,6 @@ public class ConfigManager {
                         setMaxForcedSnapshots(max);
                         break;
                     case "maxPlayers":
-                        max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -270,7 +252,6 @@ public class ConfigManager {
                         setMaxPlayers(max);
                         break;
                     case "maxSnapshots":
-                        max = 0;
                         try {
                             max = Integer.parseInt(value.toString());
                         } catch (Exception e) {
@@ -316,7 +297,7 @@ public class ConfigManager {
         instance.reloadConfig();
         config = instance.getConfig();
         load();
-        NahumInventoryStuff.setOnDebug((Boolean) getConfig("onDebug"));
+        NahumInventoryStuff.setOnDebug((Boolean) getConfigOrDefault("onDebug", false));
     }
 
     public static void save() {

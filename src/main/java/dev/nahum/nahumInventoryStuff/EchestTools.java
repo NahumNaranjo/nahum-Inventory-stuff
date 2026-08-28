@@ -1,7 +1,6 @@
 package dev.nahum.nahumInventoryStuff;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,10 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Contract;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 public class EchestTools {
@@ -29,21 +26,11 @@ public class EchestTools {
         this.snapshotManager = new SnapshotManager(reader, writer);
         this.toSender = new SenderLogger(sender);
     }
-    public EchestTools(PlayerDataReader reader, PlayerDataWriter writer) {
-        this.reader = Objects.requireNonNull(reader);
-        this.writer = Objects.requireNonNull(writer);
-        this.snapshotManager = new SnapshotManager(reader, writer);
-        this.toSender = null;
-    }
-
-    @Contract("null -> true; !null -> false")
-    public boolean isSenderNull(SenderLogger sender){
-        if(sender == null) {
-            GoodLogger.warn("Tried to use a sender-mode function while on no-sender mode for EchestTools");
-            return true;
-        } else {
-            return false;
-        }
+    public EchestTools(CommandSender sender) {
+        this.reader = new PlayerDataReader();
+        this.writer = new PlayerDataWriter(this.reader);
+        this.snapshotManager = new SnapshotManager(this.reader, this.writer);
+        this.toSender = new SenderLogger(sender);
     }
 
     public void saveEditData(OfflinePlayer viewer, OfflinePlayer targetPlayer, Inventory echest) {
@@ -58,52 +45,8 @@ public class EchestTools {
         );
     }
 
-    public void saveTransferData(CommandSender sender, OfflinePlayer targetPlayer, ItemStack[] echest, String giverName) {
-        OfflinePlayer adminActor = sender instanceof OfflinePlayer ? (OfflinePlayer) sender : null;
-        String actorName = sender instanceof Player ? sender.getName() : "Console";
-
-        snapshotManager.performAdminBufferSave(
-                adminActor,
-                targetPlayer,
-                null,
-                echest,
-                actorName + " transferred " + giverName + "'s ender chest to " + targetPlayer.getName() + "!",
-                null,
-                null
-        );
-    }
-
-    public void saveSwapData(CommandSender sender, OfflinePlayer player1, OfflinePlayer player2) {
-        String path;
-        String path2;
-        path = snapshotManager.performAdminBufferSave(
-                ((OfflinePlayer) sender) != null ? (OfflinePlayer) sender : null,
-                player2,
-                null,
-                Serializer.buildFullInventoryFromPlayerTag(reader.getPlayerData(player2.getUniqueId())),
-                ((OfflinePlayer) sender) != null ? ((OfflinePlayer) sender).getName() : "Console" + " swapped " + player1.getName() + "'s inventory with " + player2.getName() + "!",
-                null,
-                null
-        );
-        path2 = snapshotManager.performAdminBufferSave(
-                ((OfflinePlayer) sender) != null ? (OfflinePlayer) sender : null,
-                player1,
-                null,
-                Serializer.buildFullInventoryFromPlayerTag(reader.getPlayerData(player1.getUniqueId())),
-                ((OfflinePlayer) sender) != null ? ((OfflinePlayer) sender).getName() :
-                        "Console" + " swapped " + player1.getName() + "'s inventory with " + player2.getName() + "!"
-                ,
-                null,
-                path
-        );
-        if (path != null)
-            snapshotManager.updateSnapshot(Paths.get(path), sender, player2, path2, "linkedTo");
-    }
-
     public boolean cleanEnderchest(OfflinePlayer player) {
-        if(isSenderNull(toSender)) {
-            return false;
-        }
+
         if (player.getPlayer() != null) {
             player.getPlayer().getEnderChest().clear();
         } else {
@@ -127,30 +70,7 @@ public class EchestTools {
         return true;
     }
 
-    public boolean cleanEnderchestNoSend(OfflinePlayer player) {
-        if (player.getPlayer() != null) {
-            player.getPlayer().getEnderChest().clear();
-        } else {
-            try {
-                CompoundTag rootTag = reader.getPlayerData(player.getUniqueId());
-                File playerData = PathManager.getPlayerFile(player.getUniqueId());
-
-                if (rootTag == null) {
-                    return false;
-                }
-                rootTag.remove(NbtTags.getEchest());
-                NbtIo.writeCompressed(rootTag, playerData.toPath());
-            } catch (Exception e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public boolean transferEchest(OfflinePlayer recipient, OfflinePlayer giverPlayer, int mode) {
-        if(isSenderNull(toSender)) {
-            return false;
-        }
         if (giverPlayer == null) {
             toSender.error("Couldn't get the giver player's data!");
             GoodLogger.warn("Attempted to transfer an ender chest with a null giver player.");
@@ -217,9 +137,6 @@ public class EchestTools {
     }
 
     public boolean seeEchest(OfflinePlayer targetPlayer, Player viewer) {
-        if(isSenderNull(toSender)){
-            return false;
-        }
         Inventory enderChest = Bukkit.createInventory(null, InventoryType.ENDER_CHEST, ChatColor.BLACK + targetPlayer.getName() + "'s Ender Chest");
         if (targetPlayer.getPlayer() != null) {
             enderChest.setContents(targetPlayer.getPlayer().getEnderChest().getContents());
@@ -243,9 +160,6 @@ public class EchestTools {
     }
 
     public boolean editEchest(OfflinePlayer targetPlayer, Player viewer) {
-        if(isSenderNull(toSender)){
-            return false;
-        }
         Inventory enderChest = Bukkit.createInventory(null, InventoryType.ENDER_CHEST, ChatColor.BOLD + targetPlayer.getName() + "'s Ender Chest");
         if (targetPlayer.getPlayer() != null) {
             enderChest.setContents(targetPlayer.getPlayer().getEnderChest().getContents());

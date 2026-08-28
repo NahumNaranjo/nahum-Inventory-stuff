@@ -16,7 +16,7 @@ public class ConfigDatum {
     private String path;
     private ConfigDatum parent;
     private Object value;
-    private Object defaultValue;
+    private final Object defaultValue;
 
     ConfigDatum(String name) {
         this.name = name;
@@ -109,7 +109,7 @@ public class ConfigDatum {
     }
 
     public LocalTime getParsedSchedule(String value) {
-        if ((Boolean) ConfigManager.getConfig("fixedMode") == false) {
+        if ((Boolean) ConfigManager.getConfigOrDefault("fixedMode", false) == false) {
             return null;
         }
 
@@ -147,7 +147,7 @@ public class ConfigDatum {
     }
 
     public Duration getParsedLapse(String value) {
-        if ((Boolean) ConfigManager.getConfig("fixedMode") == true) {
+        if ((Boolean) ConfigManager.getConfigOrDefault("fixedMode", false) == true) {
             return null;
         }
 

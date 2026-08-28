@@ -171,23 +171,15 @@ public class GoodLogger {
     }
 
     public static String getColor(String message) {
-        switch (message.toLowerCase()) {
-            case "red":
-                return RED;
-            case "blue":
-                return BLUE;
-            case "green":
-                return GREEN;
-            case "yellow":
-                return YELLOW;
-            case "lightblue":
-                return LIGHTBLUE;
-            case "orange":
-                return ORANGE;
-            case "RESET":
-                return RESET;
-            default:
-                return message;
-        }
+        return switch (message.toLowerCase()) {
+            case "red" -> RED;
+            case "blue" -> BLUE;
+            case "green" -> GREEN;
+            case "yellow" -> YELLOW;
+            case "lightblue" -> LIGHTBLUE;
+            case "orange" -> ORANGE;
+            case "reset" -> RESET;
+            default -> message;
+        };
     }
 }

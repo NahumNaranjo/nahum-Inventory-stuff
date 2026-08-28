@@ -13,6 +13,8 @@ import java.util.*;
 public class EchestToolsCommand implements TabExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        SenderLogger toSender = new SenderLogger(sender);
+        EchestTools tools = new EchestTools(sender);
 
         if (args.length == 0) {
             return false;
@@ -24,122 +26,117 @@ public class EchestToolsCommand implements TabExecutor {
         }
 
         // Commands requiring at least 2 arguments
-        if (args.length >= 2) {
-            String option = args[0].toLowerCase();
-            String targetName = args[1];
+        String option = args[0].toLowerCase();
+        String targetName = args[1];
 
 
-            // Check if target exists
-            OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName);
-            if (targetPlayer == null) {
-                return true;
-            }
-
-            File playerData = PathManager.getPlayerFile(targetPlayer.getUniqueId());
-
-            if (!playerData.exists()) {
-                sender.sendMessage(ChatColor.RED + targetName + "'s player data does not exist!");
-                return true;
-            }
-            switch (option) {
-                case "see":
-                    if (!sender.hasPermission("nahum.enderchesttools.see") && !sender.hasPermission("nahum.enderchesttools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    Player viewer;
-                    if (sender instanceof Player) {
-                        viewer = (Player) sender;
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
-                        return true;
-                    }
-                    NahumInventoryStuff.addToAdminWatchList(viewer);
-                    seeEchest(targetPlayer, viewer, sender);
-                    sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
-                    GoodLogger.info(sender.getName() + " is looking at " +
-                            targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"see\"!");
-                    break;
-                case "edit":
-                    if (!sender.hasPermission("nahum.enderchesttools.edit") && !sender.hasPermission("nahum.enderchesttools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (sender instanceof Player) {
-                        viewer = (Player) sender;
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
-                        return true;
-                    }
-                    NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
-                    editEchest(targetPlayer, viewer, sender);
-                    sender.sendMessage(ChatColor.GREEN + "Viewing " + targetPlayer.getName() + "'s ender chest!");
-                    GoodLogger.info(sender.getName() + " is editing " + targetPlayer.getName() + "'s ender chest!");
-                    break;
-
-                case "transfer":
-                    if (!sender.hasPermission("nahum.enderchesttools.transfer") && !sender.hasPermission("nahum.enderchesttools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (args.length < 3) {
-                        sender.sendMessage(ChatColor.RED + "Usage: /echesttools transfer <recipient> <giver>");
-                        return true;
-                    }
-
-                    String giverName = args[2];
-                    OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(giverName);
-                    if (giverPlayer != null) {
-                        transferEchest(targetPlayer, giverPlayer, sender, 1);
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "Couldn't get " + giverName + "'s OfflinePlayer!");
-                        return true;
-                    }
-                    GoodLogger.info(sender.getName() + " transfered " +
-                            targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
-                    break;
-                case "swap":
-                    if (!sender.hasPermission("nahum.enderchesttools.swap") && !sender.hasPermission("nahum.enderchesttools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    if (args.length < 3) {
-                        sender.sendMessage(ChatColor.RED + "Usage: /echesttools transfer <recipient> <giver>");
-                        return true;
-                    }
-
-
-                    giverName = args[2];
-                    giverPlayer = OfflinePlayerSync.getPlayer(giverName);
-                    if (giverPlayer != null) {
-                        transferEchest(targetPlayer, giverPlayer, sender, 0);
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "Couldn't get " + giverName + "'s OfflinePlayer!");
-                        return true;
-                    }
-                    GoodLogger.info(sender.getName() + " swaped " +
-                            targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
-                    break;
-
-                case "clear":
-                    if (!sender.hasPermission("nahum.enderchesttools.clear") && !sender.hasPermission("nahum.enderchesttools")) {
-                        sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
-                        return true;
-                    }
-                    cleanEnderchest(targetPlayer, sender);
-                    GoodLogger.info(sender.getName() + " has cleared " +
-                            targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"clear\"!");
-                    break;
-
-                default:
-                    sender.sendMessage(ChatColor.RED + "Unknown option: " + option);
-                    sender.sendMessage(ChatColor.RED + "Valid options: see, transfer, clear");
-                    return false;
-            }
+        // Check if target exists
+        OfflinePlayer targetPlayer = OfflinePlayerSync.getPlayer(targetName);
+        if (targetPlayer == null) {
             return true;
         }
+        String giverName = args[2];
+        OfflinePlayer giverPlayer = OfflinePlayerSync.getPlayer(giverName);
 
-        return false;
+        File playerData = PathManager.getPlayerFile(targetPlayer.getUniqueId());
+
+        if (!playerData.exists()) {
+            toSender.error(targetName + "'s player data does not exist!");
+            return true;
+        }
+        Player viewer;
+        switch (option) {
+            case "see":
+                if (!sender.hasPermission("nahum.enderchesttools.see") && !sender.hasPermission("nahum.enderchesttools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (sender instanceof Player) {
+                    viewer = (Player) sender;
+                } else {
+                    toSender.error("You must be a player to use this command!");
+                    return true;
+                }
+                NahumInventoryStuff.addToAdminWatchList(viewer);
+                tools.seeEchest(targetPlayer, viewer);
+                toSender.success("Viewing " + targetPlayer.getName() + "'s ender chest!");
+                GoodLogger.info(sender.getName() + " is looking at " +
+                        targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"see\"!");
+                break;
+            case "edit":
+                if (!sender.hasPermission("nahum.enderchesttools.edit") && !sender.hasPermission("nahum.enderchesttools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (sender instanceof Player) {
+                    viewer = (Player) sender;
+                } else {
+                    toSender.error("You must be a player to use this command!");
+                    return true;
+                }
+                NahumInventoryStuff.addToIsEditingList(viewer, targetPlayer);
+                tools.editEchest(targetPlayer, viewer);
+                toSender.success("Viewing " + targetPlayer.getName() + "'s ender chest!");
+                GoodLogger.info(sender.getName() + " is editing " + targetPlayer.getName() + "'s ender chest!");
+                break;
+
+            case "transfer":
+                if (!sender.hasPermission("nahum.enderchesttools.transfer") && !sender.hasPermission("nahum.enderchesttools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (args.length < 3) {
+                    toSender.error("Usage: /echesttools transfer <recipient> <giver>");
+                    return true;
+                }
+
+                if (giverPlayer != null) {
+                    tools.transferEchest(targetPlayer, giverPlayer, 1);
+                } else {
+                    toSender.error("Couldn't get " + giverName + "'s OfflinePlayer!");
+                    return true;
+                }
+                GoodLogger.info(sender.getName() + " transfered " +
+                        targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
+                break;
+            case "swap":
+                if (!sender.hasPermission("nahum.enderchesttools.swap") && !sender.hasPermission("nahum.enderchesttools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                if (args.length < 3) {
+                    toSender.error("Usage: /echesttools transfer <recipient> <giver>");
+                    return true;
+                }
+
+                giverPlayer = OfflinePlayerSync.getPlayer(giverName);
+                if (giverPlayer != null) {
+                    tools.transferEchest(targetPlayer, giverPlayer, 0);
+                } else {
+                    toSender.error("Couldn't get " + giverName + "'s OfflinePlayer!");
+                    return true;
+                }
+                GoodLogger.info(sender.getName() + " swaped " +
+                        targetPlayer.getName() + "'s echest to " + giverName + "'s using the command /enderchesttools with the argument \"transfer\"!");
+                break;
+
+            case "clear":
+                if (!sender.hasPermission("nahum.enderchesttools.clear") && !sender.hasPermission("nahum.enderchesttools")) {
+                    toSender.error("You do not have permission to use this command!");
+                    return true;
+                }
+                tools.cleanEnderchest(targetPlayer);
+                GoodLogger.info(sender.getName() + " has cleared " +
+                        targetPlayer.getName() + "'s echest using the command /enderchesttools with the argument \"clear\"!");
+                break;
+
+            default:
+                toSender.error("Unknown option: " + option);
+                toSender.error("Valid options: see, transfer, clear");
+                return false;
+        }
+        return true;
+
     }
 
     @Override

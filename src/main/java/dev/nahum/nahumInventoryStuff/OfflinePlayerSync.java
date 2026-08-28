@@ -49,4 +49,38 @@ public class OfflinePlayerSync {
         GoodLogger.debug("getOnlinePlayer(" + player.getName() + ") -> " + (onlinePlayer != null));
         return onlinePlayer;
     }
+
+    public static boolean isPlayer(Object player){
+        if(player instanceof Player){
+            return true;
+        }
+        if(player instanceof OfflinePlayer){
+            return true;
+        }
+        return false;
+    }
+
+    public static Player getPlayerFromObject(Object player){
+        if(player instanceof Player newPlayer){
+            return newPlayer;
+        }
+        return null;
+    }
+
+    public static OfflinePlayer getOfflinePlayerFromObject(Object player){
+        if(player instanceof OfflinePlayer offlinePlayer){
+            return offlinePlayer;
+        }
+        return null;
+    }
+
+    public static String getPlayerType(Object player){
+        if(player instanceof Player){
+            return "player";
+        } else if(player instanceof OfflinePlayer offlinePlayer){
+            return "offlinePlayer";
+        } else {
+            return "none";
+        }
+    }
 }

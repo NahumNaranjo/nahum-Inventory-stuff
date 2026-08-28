@@ -143,7 +143,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
         GoodLogger.debug("Registering command executors...");
 
         this.getCommand("echesttools").setExecutor(new EchestToolsCommand());
-        this.getCommand("inventorytools").setExecutor(new InventoryTools());
+        this.getCommand("inventorytools").setExecutor(new InventoryToolsCommand());
         this.getCommand("inventoryclear").setExecutor(new InventoryClear());
         this.getCommand("ec").setExecutor(new EcCommand());
         this.getCommand("inv").setExecutor(new InvCommand());

@@ -68,12 +68,11 @@ public class SnapshotManager {
 
     public boolean performPlayerSaveSnapshot(Object player, ItemStack[] inventory, ItemStack[] echest, String message, String name) {
         UUID uuid = DataParser.getUuidFromObject(player);
-        File folder = PathManager.getPlayerDeathsFolder(uuid);
-
-        if (uuid == null) {
-            GoodLogger.warn("Couldn't get last dead player's uuid");
-            return false;
+        if(uuid == null){
+            GoodLogger.debug("Invalid player UUID, it might be a null or invalid player");
         }
+
+        File folder = PathManager.getPlayerDeathsFolder(uuid);
 
         File snapshot = makeNewSnapshot(folder, null);
         writer.saveSnapshot(inventory, echest, uuid, snapshot);
@@ -121,11 +120,17 @@ public class SnapshotManager {
             writer.writeStringToSnapshot(snapshot, playerUuid, otherPath, "linkedTo");
         }
 
-        GoodLogger.debug(((OfflinePlayer) admin).getName() + "'s actions on " + ((OfflinePlayer) player).getName() + "'s inventories saved to: " + snapshot.getAbsolutePath());
-        return snapshot.getAbsolutePath();
+        String writtenTo = snapshot.getAbsolutePath();
+
+        GoodLogger.debug(
+                OfflinePlayerSync.isPlayer(admin) ? ((OfflinePlayer)admin).getName() : "console"  +
+                "'s actions on " + ((OfflinePlayer) player).getName() + "'s inventories saved to: " +
+                        writtenTo
+        );
+        return writtenTo;
     }
 
-    public boolean updateSnapshot(Path path, Object admin, Object player, String toWrite, String key) {
+    public boolean updateSnapshot(Path path, Object player, String toWrite, String key) {
         File snapshot = path.toFile();
         UUID playerUuid = DataParser.getUuidFromObject(player);
         return writer.writeStringToSnapshot(snapshot, playerUuid, toWrite, key);

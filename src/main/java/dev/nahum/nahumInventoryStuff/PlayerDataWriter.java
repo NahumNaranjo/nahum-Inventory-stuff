@@ -207,13 +207,15 @@ public class PlayerDataWriter {
         }
     }
 
-    public boolean writeStringToSnapshot(File snapshot, UUID uuid, String message, String key) {
+    public boolean writeStringToSnapshot(File snapshot, String s, String key){
+        return writeStringToSnapshot(snapshot, null, s, key);
+    }
+
+    public boolean writeStringToSnapshot(File snapshot, UUID uuid, String s, String key) {
         CompoundTag tag = reader.getPlayerSnapshotData(snapshot);
         CompoundTag stringTag = tag.getCompoundOrEmpty("additionalInfo");
-        if (stringTag.isEmpty()) {
-            stringTag = new CompoundTag();
-        }
-        stringTag.putString(key, message);
+
+        stringTag.putString(key, s);
 
         tag.put("additionalInfo", stringTag);
 
@@ -221,7 +223,7 @@ public class PlayerDataWriter {
             NbtIo.writeCompressed(tag, snapshot.toPath());
             return true;
         } catch (IOException e) {
-            GoodLogger.error("Failed to save player data for " + uuid.toString() + ": \n" + e.getMessage());
+            GoodLogger.error("Failed to save player data for " + (uuid != null ? uuid.toString() : "no uuid") + ": \n" + e.getMessage());
             return false;
         }
     }
