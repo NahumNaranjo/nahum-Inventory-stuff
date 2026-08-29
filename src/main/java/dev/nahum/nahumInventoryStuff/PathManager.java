@@ -2,6 +2,7 @@ package dev.nahum.nahumInventoryStuff;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.UUID;

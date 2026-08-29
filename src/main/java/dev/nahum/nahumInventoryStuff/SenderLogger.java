@@ -27,4 +27,22 @@ public class SenderLogger {
         if(onDebug)
             sender.sendMessage(ChatColor.ITALIC + "NIS DEBUG: " + message);
     }
+    public void dev(String message) {
+        boolean onDev = (boolean)ConfigManager.getConfigOrDefault("onDev", false);
+        if(onDev){
+            sender.sendMessage(ChatColor.ITALIC + "NIS-DEV: " + message);
+        }
+    }
+    public void time(String message) {
+        boolean timeInfo = (boolean)ConfigManager.getConfigOrDefault("timeInfo", false);
+        if(timeInfo){
+            sender.sendMessage(ChatColor.ITALIC + "NIS-TIME: " + message);
+        }
+    }
+    public void web(String message) {
+        boolean webInfo = (boolean)ConfigManager.getConfigOrDefault("webInfo", false);
+        if(webInfo){
+            sender.sendMessage(ChatColor.ITALIC + "NIS-WEB: " + message);
+        }
+    }
 }

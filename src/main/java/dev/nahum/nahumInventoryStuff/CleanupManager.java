@@ -1,7 +1,14 @@
 package dev.nahum.nahumInventoryStuff;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class CleanupManager {
     private CleanupManager() {
@@ -54,6 +61,39 @@ public class CleanupManager {
             } else {
                 GoodLogger.warn("Failed to delete: " + file.getAbsolutePath());
             }
+        }
+    }
+
+    public static void deleteOldBackups(File folder) {
+        LocalDate maxAge = ConfigManager.getMaxAge(null);
+        try (Stream<Path> stream = Files.list(folder.toPath())) {
+            stream.filter(Files::isRegularFile)
+                    .forEach(path -> {
+                        try {
+                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+
+                            LocalDate age = attr.creationTime().toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate();
+
+                            if (age.isBefore(maxAge)) {
+                                GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
+                                Files.deleteIfExists(path);
+                            }
+                            if (path.toFile().exists()) {
+                                LocalDate ageFromName = FileManager.getLocalDateFromFileName(path.toFile().getName().replace(".nahumbackup", ""));
+                                if (ageFromName.isBefore(maxAge)) {
+                                    GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
+                                    Files.deleteIfExists(path);
+                                }
+                            }
+                            GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
+                        } catch (IOException e) {
+                            System.err.println("Could not read attributes for: " + path.getFileName());
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("Error reading directory: " + e.getMessage());
         }
     }
 }

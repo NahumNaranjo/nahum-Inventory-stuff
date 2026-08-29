@@ -1,6 +1,7 @@
 package dev.nahum.nahumInventoryStuff;
 
 public class NbtTags {
+    // minecraft
     private static final String echest = "EnderItems";
     private static final String inventory = "Inventory";
     private static final String slot = "Slot";
@@ -14,6 +15,8 @@ public class NbtTags {
     private static final String feet = "feet";
     private static final String offhand = "offhand";
     private static final String[] armor = {head, feet, chest, legs, offhand};
+
+    //  custom
     private static final String linkedTo = "linkedTo";
 
     public static String getLinkedTo() {return linkedTo;}

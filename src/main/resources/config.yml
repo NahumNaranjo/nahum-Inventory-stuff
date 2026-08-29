@@ -14,7 +14,7 @@ backupSettings:
       maxJoinSnapshots: 5
       maxLeaveSnapshots: 5
       maxChangeSnapshots: 5
-      maxForcedSnapshots: 0 #leave any of these in 0 to make an infinite ammount
+      maxForcedSnapshots: 0 #leave any of these in 0 to make an infinite amount
 
     adminSnapshots:
       maxPlayers: 10 # maximum of different players to store data from
@@ -22,3 +22,8 @@ backupSettings:
 
 debug:
   onDebug: false
+
+dev:
+  onDev: false
+  timeInfo: false
+  webInfo: false

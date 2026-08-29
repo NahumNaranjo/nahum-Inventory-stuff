@@ -4,18 +4,11 @@ import net.minecraft.nbt.ListTag;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 //TODO: custom inventories/inventory states
 //      custom ui engine
@@ -30,7 +23,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
     private static Instant lastTimeBackuped;
     private final PlayerDataReader reader = new PlayerDataReader();
     private final PlayerDataWriter writer = new PlayerDataWriter(reader);
-    private final BackupManager backupManager = new BackupManager(reader, writer);
+    private BackupManager backupManager;
 
     public static String getCredits() {
         return "NahumInventoryStuff :D\n" +
@@ -91,78 +84,17 @@ public final class NahumInventoryStuff extends JavaPlugin {
         isEditingList.remove(DataParser.getUuidFromObject(admin), DataParser.getUuidFromObject(victim));
     }
 
-    public static void deleteOldBackups(File folder) {
-        LocalDate maxAge = ConfigManager.getMaxAge(null);
-        try (Stream<Path> stream = Files.list(folder.toPath())) {
-            stream.filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        try {
-                            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
 
-                            LocalDate age = attr.creationTime().toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate();
 
-                            if (age.isBefore(maxAge)) {
-                                GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + age.toString());
-                                Files.deleteIfExists(path);
-                            }
-                            if (path.toFile().exists()) {
-                                LocalDate ageFromName = FileManager.getLocalDateFromFileName(path.toFile().getName().replace(".nahumbackup", ""));
-                                if (ageFromName.isBefore(maxAge)) {
-                                    GoodLogger.debug("\nDeleting old backup: " + path.toAbsolutePath() + "\nBecause is older than: " + maxAge.toString() + " with an age of " + ageFromName.toString());
-                                    Files.deleteIfExists(path);
-                                }
-                            }
-                            GoodLogger.debug("\nNot deleting old backup: " + path.toAbsolutePath() + "\nBecause is younger than: " + maxAge.toString() + " with an age of " + age.toString());
-                        } catch (IOException e) {
-                            System.err.println("Could not read attributes for: " + path.getFileName());
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Error reading directory: " + e.getMessage());
-        }
-    }
-
-    public static List<UUID> getPlayerWatchList() {
+    public List<UUID> getPlayerWatchList() {
         return playerWatchList;
     }
 
-    public static void setPlayerWatchList(List<UUID> playerWatchList) {
+    public void setPlayerWatchList(List<UUID> playerWatchList) {
         NahumInventoryStuff.playerWatchList = playerWatchList;
     }
 
-    @Override
-    public void onEnable() {
-        plugin = this;
-        getInstance().saveDefaultConfig();
-        ConfigManager.load();
-
-        int pluginBStatsID = 33407;
-        Metrics metrics = new Metrics(getInstance(), pluginBStatsID);
-
-        if (ConfigManager.getConfig("onDebug") == null) {
-            onDebug = false;
-        } else {
-            onDebug = (Boolean) ConfigManager.getConfig("onDebug");
-        }
-
-        GoodLogger.info("Debug mode: " + (onDebug ? "ON" : "OFF") + " (toggle with /nahumstuff debug)");
-        GoodLogger.debug("Registering command executors...");
-
-        this.getCommand("echesttools").setExecutor(new EchestToolsCommand());
-        this.getCommand("inventorytools").setExecutor(new InventoryToolsCommand());
-        this.getCommand("inventoryclear").setExecutor(new InventoryClear());
-        this.getCommand("ec").setExecutor(new EcCommand());
-        this.getCommand("inv").setExecutor(new InvCommand());
-        this.getCommand("nahumstuff").setExecutor(new NahumInventoryStuffCommand());
-
-        GoodLogger.debug("World folder: " + Bukkit.getWorlds().getFirst().getWorldFolder().getAbsolutePath());
-        GoodLogger.debug("Plugin data folder: " + getDataFolder().getAbsolutePath());
-
-        getServer().getPluginManager().registerEvents(new InventorySecurityWatcher(), this);
-
-
+    private void fetchVersionData(){
         CompletableFuture.supplyAsync(() -> {
             GoodLogger.debug("Looking for new versions...");
             UpdateChecker.setUp();
@@ -190,6 +122,40 @@ public final class NahumInventoryStuff extends JavaPlugin {
             GoodLogger.error(ex.getMessage());
             return null;
         });
+    }
+
+    private void setCommandExecutors(){
+        getInstance().getCommand("echesttools").setExecutor(new EchestToolsCommand());
+        getInstance().getCommand("inventorytools").setExecutor(new InventoryToolsCommand());
+        getInstance().getCommand("inventoryclear").setExecutor(new InventoryClear());
+        getInstance().getCommand("ec").setExecutor(new EcCommand());
+        getInstance().getCommand("inv").setExecutor(new InvCommand());
+        getInstance().getCommand("nahumstuff").setExecutor(new NahumInventoryStuffCommand());
+    }
+
+    @Override
+    public void onEnable() {
+        plugin = this;
+        backupManager = new BackupManager(reader, writer);
+        getInstance().saveDefaultConfig();
+        ConfigManager.load();
+
+        int pluginBStatsID = 33407;
+        Metrics metrics = new Metrics(getInstance(), pluginBStatsID);
+
+        onDebug = (Boolean) ConfigManager.getConfigOrDefault("onDebug", false);
+
+        GoodLogger.info("Debug mode: " + (onDebug ? "ON" : "OFF") + " (toggle with /nahumstuff debug)");
+        GoodLogger.debug("Registering command executors...");
+
+        setCommandExecutors();
+
+        GoodLogger.debug("World folder: " + Bukkit.getWorlds().getFirst().getWorldFolder().getAbsolutePath());
+        GoodLogger.debug("Plugin data folder: " + getDataFolder().getAbsolutePath());
+
+        getServer().getPluginManager().registerEvents(new InventorySecurityWatcher(), this);
+        fetchVersionData();
+
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -228,7 +194,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                 GoodLogger.debug("--- Fixed Mode Check ---");
 
                 if (ConfigManager.hasAutoDelete()) {
-                    deleteOldBackups(PathManager.getBackupFolder());
+                    CleanupManager.deleteOldBackups(PathManager.getBackupFolder());
                 }
                 LocalTime now = LocalTime.now();
                 LocalTime scheduled = ConfigManager.getParsedSchedule();
@@ -261,7 +227,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                     if (lastBackupDate.isBefore(today)) {
                         GoodLogger.info("✓ Performing scheduled backup at " + now.format(DateTimeFormatter.ofPattern("HH:mm")));
                         if (ConfigManager.hasAutoDelete()) {
-                            deleteOldBackups(PathManager.getBackupFolder());
+                            CleanupManager.deleteOldBackups(PathManager.getBackupFolder());
                         }
                         performBackup();
                         lastTimeBackuped = Instant.now();
@@ -313,7 +279,7 @@ public final class NahumInventoryStuff extends JavaPlugin {
                             formatDuration(elapsedSeconds) + " / interval: " +
                             formatDuration(intervalSeconds) + ")");
                     if (ConfigManager.hasAutoDelete()) {
-                        deleteOldBackups(PathManager.getBackupFolder());
+                        CleanupManager.deleteOldBackups(PathManager.getBackupFolder());
                     }
                     performBackup();
                     lastTimeBackuped = Instant.now();
@@ -342,7 +308,6 @@ public final class NahumInventoryStuff extends JavaPlugin {
             }
         }.runTaskTimer(getInstance(), 0L, 20L);
     }
-
     @Override
     public void onDisable() {
         ConfigManager.save();

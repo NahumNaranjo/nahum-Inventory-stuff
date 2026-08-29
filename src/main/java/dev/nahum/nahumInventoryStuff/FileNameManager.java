@@ -1,6 +1,9 @@
 package dev.nahum.nahumInventoryStuff;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,5 +20,25 @@ public class FileNameManager {
                     "-(" + i + ")" + ".nahumbackup");
         }
         return returning;
+    }
+
+    public static String checkCustomBackupName(String input) {
+        File backupFolder = PathManager.getBackupFolder();
+
+        Path path = Paths.get(backupFolder.toString(), input);
+
+        if (Files.exists(path) && Files.isRegularFile(path)) {
+            return input;
+        }
+
+        if (!input.endsWith(".nahumbackup")) {
+            Path withExtension = Paths.get(backupFolder.toString(), input + ".nahumbackup");
+            if (Files.exists(withExtension) && Files.isRegularFile(withExtension)) {
+                return input + ".nahumbackup";
+            }
+        }
+
+        GoodLogger.error("Couldn't find backup file: " + input);
+        return null;
     }
 }

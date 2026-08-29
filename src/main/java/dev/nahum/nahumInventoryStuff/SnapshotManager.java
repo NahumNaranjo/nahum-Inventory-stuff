@@ -63,7 +63,7 @@ public class SnapshotManager {
                         File.separator + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) +
                         "-(" + i + ")" + ".nahumbackup");
             }
-            NahumInventoryStuff.deleteOldBackups(folder);
+            CleanupManager.deleteOldBackups(folder);
         } else {
             newSnapshot = new File(folder.toPath().toString(), name + ".nahumbackup");
         }

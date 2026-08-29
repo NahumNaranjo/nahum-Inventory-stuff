@@ -21,6 +21,7 @@ public class GoodLogger {
             RESET, RED, ORANGE, GREEN, YELLOW, BLUE, LIGHTBLUE,
     };
     public static Logger logger = getLogger();
+    private static final boolean onDebug = (boolean)ConfigManager.getConfigOrDefault("onDebug", false);
 
     private static Logger getLogger() {
         return NahumInventoryStuff.getInstance() != null ? NahumInventoryStuff.getInstance().getLogger() : Bukkit.getLogger();
@@ -55,7 +56,7 @@ public class GoodLogger {
         error(message);
         if (throwable != null) {
             error("Exception: " + throwable.getClass().getSimpleName() + " -> " + throwable.getMessage() + "\n" + "Cause: " + throwable.getCause());
-            if(NahumInventoryStuff.getOnDebug())
+            if(onDebug)
                 throwable.printStackTrace();
         }
     }
@@ -64,8 +65,26 @@ public class GoodLogger {
         logger.info(GREEN + message + RESET);
     }
 
+    public static void dev(String message) {
+        if((boolean)ConfigManager.getConfigOrDefault("onDev", false)){
+            logger.info(ORANGE + "DEV: " + message + RESET);
+        }
+    }
+
+    public static void time(String message) {
+        if((boolean)ConfigManager.getConfigOrDefault("timeInfo", false)){
+            logger.info(ORANGE + "DEV-TIME: " + message + RESET);
+        }
+    }
+
+    public static void web(String message) {
+        if((boolean)ConfigManager.getConfigOrDefault("webInfo", false)){
+            logger.info(ORANGE + "DEV-WEB: " + message + RESET);
+        }
+    }
+
     public static void debug(String message) {
-        if (NahumInventoryStuff.getOnDebug()) {
+        if (onDebug) {
             logger.info(ORANGE + "DEBUG: " + message + RESET);
         }
     }
@@ -79,7 +98,7 @@ public class GoodLogger {
     }
 
     public static void debugPlayer(String context, OfflinePlayer player) {
-        if (!NahumInventoryStuff.getOnDebug() || player == null) {
+        if (!onDebug || player == null) {
             return;
         }
         debug(context + " player=" + player.getName()
@@ -89,7 +108,7 @@ public class GoodLogger {
     }
 
     public static void debugFile(String context, File file) {
-        if (!NahumInventoryStuff.getOnDebug() || file == null) {
+        if (!onDebug || file == null) {
             return;
         }
         debug(context + " path=" + file.getAbsolutePath()
@@ -105,7 +124,7 @@ public class GoodLogger {
     }
 
     public static void debugItemStacks(String label, ItemStack[] items) {
-        if (!NahumInventoryStuff.getOnDebug() || items == null) {
+        if (!onDebug || items == null) {
             return;
         }
         StringBuilder builder = new StringBuilder(label).append(" (").append(items.length).append(" slots): ");
@@ -128,7 +147,7 @@ public class GoodLogger {
     }
 
     public static void debugListTag(String label, ListTag listTag) {
-        if (!NahumInventoryStuff.getOnDebug()) {
+        if (!onDebug) {
             return;
         }
         if (listTag == null) {

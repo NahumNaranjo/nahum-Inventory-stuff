@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+
 public class ConfigDatum {
     private static final Pattern DURATION_PATTERN =
             Pattern.compile("(?:(\\d+(?:\\.\\d+)?)\\s*d(?:ays?)?)?\\s*" +  // Days (optional)
@@ -17,6 +19,18 @@ public class ConfigDatum {
     private ConfigDatum parent;
     private Object value;
     private final Object defaultValue;
+    private Class<?> type = Object.class;
+
+    public enum types {
+        STRING,
+        INTEGER,
+        DOUBLE,
+        BOOLEAN,
+        DURATION,
+        LOCALTIME,
+        LOCALDATE,
+        OBJECT
+    }
 
     ConfigDatum(String name) {
         this.name = name;
@@ -26,12 +40,13 @@ public class ConfigDatum {
         this.defaultValue = null;
     }
 
-    ConfigDatum(String name, Object value,  Object defaultValue) {
+    ConfigDatum(String name, Object value, Object defaultValue, types type) {
         this.name = name;
         this.path = null;
         this.value = value;
         this.parent = null;
         this.defaultValue = defaultValue;
+        this.type = getType(type);
     }
 
     ConfigDatum(String name, ConfigDatum parent) {
@@ -40,31 +55,53 @@ public class ConfigDatum {
         this.value = null;
         this.parent = parent;
         this.defaultValue = null;
+        this.type = null;
     }
 
-    ConfigDatum(String name, Object value, ConfigDatum parent) {
+    ConfigDatum(String name, Object value, ConfigDatum parent, types type) {
         this.name = name;
         this.path = null;
         this.value = value;
         this.parent = parent;
         this.defaultValue = null;
+        this.type = getType(type);
     }
-    ConfigDatum(String name, Object value, Object defaultValue, ConfigDatum parent) {
+
+    ConfigDatum(String name, ConfigDatum parent, types type) {
         this.name = name;
         this.path = null;
-        if(value != null) {
+        this.value = null;
+        this.parent = parent;
+        this.defaultValue = null;
+        this.type = getType(type);
+    }
+
+    ConfigDatum(String name, Object value, Object defaultValue, ConfigDatum parent, types type) {
+        this.name = name;
+        this.path = null;
+        if (value != null) {
             this.value = value;
         }
         this.parent = parent;
         this.defaultValue = defaultValue;
+        this.type = getType(type);
     }
 
-    ConfigDatum(String name, Object value, ConfigDatum parent, Object defaultValue) {
-        this.name = name;
-        this.path = null;
-        this.value = value;
-        this.parent = parent;
-        this.defaultValue = defaultValue;
+    public Class<?> getType(types type) {
+        return switch (type) {
+            case types.STRING -> String.class;
+            case types.INTEGER -> Integer.class;
+            case types.DOUBLE -> Double.class;
+            case types.BOOLEAN -> Boolean.class;
+            case types.DURATION -> Duration.class;
+            case types.LOCALTIME -> LocalTime.class;
+            case types.LOCALDATE -> LocalDate.class;
+            default -> Object.class;
+        };
+    }
+
+    public Class<?> getDataType() {
+        return type;
     }
 
     public String getName() {
@@ -96,12 +133,117 @@ public class ConfigDatum {
         this.parent = parent;
     }
 
-    public Object getValue() {
-        return value;
+    public Object getValue() {return this.value;}
+
+    public <T> T getTypedValue() {
+        if(this.type.isInstance(this.value)) {
+            return (T) this.value;
+        } else {
+            return null;
+        }
+    }
+
+    public boolean isCompatible(Object value){
+        if(this.type.isInstance(value)) {
+            return true;
+        }
+        if(value instanceof String s) {
+            if(this.value == Integer.class){
+                try{
+                    Integer.parseInt(s);
+                } catch(NumberFormatException e){
+                    GoodLogger.error("Invalid number format, error: \n" + e.getMessage());
+                    return false;
+                }
+                return true;
+            }
+            if(this.value == Double.class){
+                try{
+                    Double.parseDouble(s);
+                } catch(NumberFormatException e){
+                    GoodLogger.error("Invalid number format, error: \n" + e.getMessage());
+                    return false;
+                }
+                return true;
+            }
+            if (this.type == Duration.class) {
+                // Check if it's a valid duration format
+                return ConfigManager.checkLapseFormat(s);
+            }
+
+            if (this.type == LocalTime.class) {
+                // Check if it's a valid time format
+                return ConfigManager.checkScheduleFormat(s);
+            }
+
+            if (this.type == LocalDate.class) {
+                try {
+                    LocalDate.parse(s);
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            if (this.type == String.class) {
+                return true;
+            }
+        }
+
+        if (value instanceof Number) {
+            if (this.type == Integer.class || this.type == Double.class ||
+                    this.type == Long.class || this.type == Float.class) {
+                return true;
+            }
+        }
+
+        if (value instanceof Number && this.type == Boolean.class) {
+            int num = ((Number) value).intValue();
+            return num == 0 || num == 1;
+        }
+
+        return false;
+    }
+
+    public <T> T getTypedValueOrDefault(T defaultValue) {
+        if(this.type.isInstance(this.value)) {
+            return (T) this.value;
+        } else {
+            return defaultValue;
+        }
     }
 
     public void setValue(Object value) {
-        this.value = value;
+        if(value instanceof String s && isCompatible(value)) {
+            if(this.value == String.class){
+                this.value = s;
+                return;
+            }
+            if(this.value == Integer.class){
+                this.value = Integer.parseInt(s);
+            }
+            if(this.value == Double.class){
+                this.value = Double.parseDouble(s);
+            }
+            if(this.type == Duration.class) {
+                this.value = getParsedLapse(s);
+            }
+            if(this.type == LocalTime.class) {
+                this.value = LocalTime.parse(s);
+            }
+            if(this.type == LocalDate.class) {
+                this.value = LocalDate.parse(s);
+            }
+            if(this.type == Boolean.class){
+                this.value = Boolean.parseBoolean(s);
+            }
+            return;
+        }
+        if(this.type.isInstance(value)) {
+            this.value = value;
+        } else {
+            GoodLogger.error("Caught error: ", new IllegalArgumentException("Value must be of type " + this.type));
+        }
     }
 
     public Object getDefaultValue() {
@@ -109,7 +251,7 @@ public class ConfigDatum {
     }
 
     public LocalTime getParsedSchedule(String value) {
-        if ((Boolean) ConfigManager.getConfigOrDefault("fixedMode", false) == false) {
+        if (ConfigManager.getConfigOrDefault("fixedMode", false) == false) {
             return null;
         }
 
